@@ -102,16 +102,6 @@ export class Game {
     }
   }
 
-  primaryAction() {
-    if (this.state === STATE.PLAYING) {
-      this.flap();
-    } else if (this.state === STATE.MENU) {
-      this.startGame();
-    } else if (this.state === STATE.GAMEOVER && this.ui.isGameOverVisible()) {
-      this.startGame();
-    }
-  }
-
   togglePause() {
     if (this.state === STATE.PLAYING) {
       this.state = STATE.PAUSED;

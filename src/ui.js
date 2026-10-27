@@ -118,10 +118,6 @@ export class UI {
     this.gameoverScreen.classList.add('hidden');
   }
 
-  isGameOverVisible() {
-    return !this.gameoverScreen.classList.contains('hidden');
-  }
-
   setSoundMuted(muted) {
     this.btnSound.textContent = muted ? '🔇' : '🔊';
   }
