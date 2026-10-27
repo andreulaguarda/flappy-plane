@@ -17,16 +17,16 @@ export class UI {
     this.bannerSubEl = document.getElementById('banner-sub');
     this.bannerTitleEl = document.getElementById('banner-title');
 
-    this.startScreen = document.getElementById('start-screen');
     this.pauseScreen = document.getElementById('pause-screen');
     this.gameoverScreen = document.getElementById('gameover-screen');
 
-    this.btnStart = document.getElementById('btn-start');
     this.btnResume = document.getElementById('btn-resume');
     this.btnRestartPause = document.getElementById('btn-restart-pause');
     this.btnRetry = document.getElementById('btn-retry');
     this.btnPause = document.getElementById('btn-pause');
     this.btnSound = document.getElementById('btn-sound');
+    this.iconSoundOn = document.getElementById('icon-sound-on');
+    this.iconSoundOff = document.getElementById('icon-sound-off');
 
     this.goScoreEl = document.getElementById('go-score');
     this.goBestEl = document.getElementById('go-best');
@@ -44,7 +44,6 @@ export class UI {
       fn();
     };
 
-    this.btnStart.addEventListener('click', wrap(handlers.onStart));
     this.btnResume.addEventListener('click', wrap(handlers.onResume));
     this.btnRestartPause.addEventListener('click', wrap(handlers.onRestart));
     this.btnRetry.addEventListener('click', wrap(handlers.onRetry));
@@ -80,16 +79,16 @@ export class UI {
     }, 2600);
   }
 
+  setTapHintText(text) {
+    this.tapHintEl.textContent = text;
+  }
+
   showTapHint() {
     this.tapHintEl.classList.remove('fade-out');
   }
 
   fadeTapHint() {
     this.tapHintEl.classList.add('fade-out');
-  }
-
-  hideStart() {
-    this.startScreen.classList.add('hidden');
   }
 
   showPause() {
@@ -119,6 +118,9 @@ export class UI {
   }
 
   setSoundMuted(muted) {
-    this.btnSound.textContent = muted ? '🔇' : '🔊';
+    if (this.iconSoundOn && this.iconSoundOff) {
+      this.iconSoundOn.classList.toggle('hidden-icon', muted);
+      this.iconSoundOff.classList.toggle('hidden-icon', !muted);
+    }
   }
 }

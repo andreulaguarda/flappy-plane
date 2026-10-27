@@ -22,24 +22,31 @@ export class Game {
     this.ui = ui;
     this.sound = sound;
 
-    this.state = STATE.MENU;
+    this.state = STATE.READY;
     this.score = 0;
     this.bestScore = parseInt(localStorage.getItem(STORAGE_BEST_KEY) || '0', 10);
     this.currentPhaseId = 1;
 
-    this.planeY = 0.5;
+    this.runwayPlaneY = CONFIG.floorY + 0.88;
+    this.planeY = this.runwayPlaneY;
     this.planeVelY = 0;
-    this.scrollSpeed = CONFIG.baseSpeed;
+    this.scrollSpeed = 0;
     this.distSinceLastSpawn = 0;
     this.smokeTimer = 0;
+    this.takeoffTimer = 0;
     this.elapsedTime = 0;
     this.clock = new THREE.Clock();
 
     this.ui.bind({
-      onStart: () => this.startGame(),
       onResume: () => this.togglePause(),
-      onRestart: () => this.startGame(),
-      onRetry: () => this.startGame(),
+      onRestart: () => {
+        this.sound.playClick();
+        this.resetToRunway();
+      },
+      onRetry: () => {
+        this.sound.playClick();
+        this.resetToRunway();
+      },
       onPauseToggle: () => this.togglePause(),
       onSoundToggle: () => this.toggleSound()
     });
@@ -49,8 +56,7 @@ export class Game {
     this.ui.setBest(this.bestScore);
     this.ui.setSoundMuted(this.sound.muted);
 
-    this.applyPhase(PHASES[0], false);
-    this.plane.position.set(this.world.planeAnchorX, this.planeY, 0);
+    this.resetToRunway();
   }
 
   start() {
@@ -61,35 +67,42 @@ export class Game {
     animate();
   }
 
-  startGame() {
-    this.sound.playClick();
+  resetToRunway() {
     this.obstacles.clear();
     this.particles.clear();
 
     this.score = 0;
     this.currentPhaseId = 1;
-    this.planeY = 1.0;
+    this.runwayPlaneY = CONFIG.floorY + 0.88;
+    this.planeY = this.runwayPlaneY;
     this.planeVelY = 0;
-    this.scrollSpeed = CONFIG.baseSpeed;
+    this.scrollSpeed = 0;
     this.distSinceLastSpawn = 0;
     this.smokeTimer = 0;
+    this.takeoffTimer = 0;
 
+    this.environment.resetRunway(this.world.planeAnchorX);
     this.plane.position.set(this.world.planeAnchorX, this.planeY, 0);
-    this.plane.rotation.set(0, 0, 0);
+    this.plane.rotation.set(0, 0, 0.06);
     this.world.resetShake();
 
     this.ui.setScore(0);
-    this.ui.hideStart();
     this.ui.hidePause();
     this.ui.hideGameOver();
+    this.ui.setTapHintText('TOCA LA PANTALLA PARA DESPEGAR');
     this.ui.showTapHint();
     this.applyPhase(PHASES[0], false);
 
-    this.obstacles.spawn(12, 0);
-    this.obstacles.spawn(12 + CONFIG.spawnIntervalDist, 0);
+    this.state = STATE.READY;
+  }
 
-    this.state = STATE.PLAYING;
-    this.flap();
+  beginTakeoff() {
+    if (this.state !== STATE.READY) return;
+    this.state = STATE.TAKEOFF;
+    this.takeoffTimer = 0;
+    this.sound.playFlap();
+    this.ui.setTapHintText('TOCA LA PANTALLA PARA ELEVARTE');
+    this.ui.showTapHint();
   }
 
   flap() {
@@ -163,19 +176,29 @@ export class Game {
     this.elapsedTime += dt;
 
     this.world.updateColors(dt);
-    this.propeller.rotation.x += (this.state === STATE.GAMEOVER ? 8 : 34) * dt;
+
+    if (this.state === STATE.PLAYING) {
+      this.propeller.rotation.x += 36 * dt;
+    } else if (this.state === STATE.TAKEOFF) {
+      const pSpeed = 12 + 26 * Math.min(1, this.takeoffTimer / 0.95);
+      this.propeller.rotation.x += pSpeed * dt;
+    } else if (this.state === STATE.GAMEOVER) {
+      this.propeller.rotation.x += 8 * dt;
+    }
 
     const activeScroll =
-      this.state === STATE.PAUSED
+      this.state === STATE.PAUSED || this.state === STATE.READY
         ? 0
-        : this.state === STATE.PLAYING
+        : this.state === STATE.PLAYING || this.state === STATE.TAKEOFF
           ? this.scrollSpeed
-          : 4.5;
+          : 3.5;
 
     this.environment.update(dt, activeScroll);
 
-    if (this.state === STATE.MENU) {
-      this.updateMenu(dt);
+    if (this.state === STATE.READY) {
+      this.updateReady();
+    } else if (this.state === STATE.TAKEOFF) {
+      this.updateTakeoff(dt);
     } else if (this.state === STATE.PLAYING) {
       this.updatePlaying(dt);
     } else if (this.state === STATE.GAMEOVER) {
@@ -190,16 +213,41 @@ export class Game {
     this.world.renderer.render(this.world.scene, this.world.camera);
   }
 
-  updateMenu(dt) {
-    this.planeY = 0.8 + Math.sin(this.elapsedTime * 2.6) * 0.85;
+  updateReady() {
+    this.planeY = this.runwayPlaneY;
     this.plane.position.set(this.world.planeAnchorX, this.planeY, 0);
-    this.plane.rotation.z = Math.cos(this.elapsedTime * 2.6) * 0.16;
-    this.plane.rotation.x = Math.sin(this.elapsedTime * 1.8) * 0.08;
+    this.plane.rotation.set(0, 0, 0.06);
+  }
+
+  updateTakeoff(dt) {
+    const duration = 0.95;
+    this.takeoffTimer += dt;
+    const t = Math.min(1, this.takeoffTimer / duration);
+    const smoothT = t * t * (3 - 2 * t);
+
+    this.scrollSpeed = CONFIG.baseSpeed * smoothT;
+
+    const liftT = Math.max(0, (t - 0.25) / 0.75);
+    const liftSmooth = liftT * liftT * (3 - 2 * liftT);
+
+    this.planeY = THREE.MathUtils.lerp(this.runwayPlaneY, 0.8, liftSmooth);
+    this.plane.position.set(this.world.planeAnchorX, this.planeY, 0);
+    this.plane.rotation.z = THREE.MathUtils.lerp(0.06, 0.36, Math.sin(liftT * Math.PI));
+    this.plane.rotation.x = Math.sin(this.elapsedTime * 9) * 0.04;
 
     this.smokeTimer += dt;
-    if (this.smokeTimer > 0.11) {
+    if (this.smokeTimer > 0.055) {
       this.smokeTimer = 0;
-      this.particles.spawnSmoke(this.plane.position.x - 1.25, this.plane.position.y - 0.08, 0);
+      this.particles.spawnSmoke(this.plane.position.x - 1.25, this.plane.position.y - 0.1, 0);
+    }
+
+    if (t >= 1) {
+      this.scrollSpeed = CONFIG.baseSpeed;
+      this.planeVelY = CONFIG.jumpImpulse * 0.72;
+      this.distSinceLastSpawn = 0;
+      this.obstacles.spawn(16, 0);
+      this.obstacles.spawn(16 + CONFIG.spawnIntervalDist, 0);
+      this.state = STATE.PLAYING;
     }
   }
 

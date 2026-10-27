@@ -29,13 +29,29 @@
       </div>
 
       <div class="hud-controls">
-        <button class="icon-btn" id="btn-sound" title="Activar/Desactivar sonido" aria-label="Sonido">🔊</button>
-        <button class="icon-btn" id="btn-pause" title="Pausar juego" aria-label="Pausa">⏸</button>
+        <button class="icon-btn" id="btn-sound" title="Activar/Desactivar sonido" aria-label="Sonido">
+          <svg id="icon-sound-on" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+          <svg id="icon-sound-off" class="hidden-icon" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+        <button class="icon-btn" id="btn-pause" title="Pausar juego" aria-label="Pausa">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+            <rect x="5" y="4" width="5" height="16" rx="2"></rect>
+            <rect x="14" y="4" width="5" height="16" rx="2"></rect>
+          </svg>
+        </button>
       </div>
     </div>
 
     <div class="tap-hint-bottom" id="tap-hint">
-      TOCA LA PANTALLA PARA ELEVARTE
+      TOCA LA PANTALLA PARA DESPEGAR
     </div>
   </div>
 
@@ -43,39 +59,6 @@
   <div id="phase-banner">
     <div class="banner-sub" id="banner-sub">¡NUEVA ZONA DESBLOQUEADA!</div>
     <div class="banner-title" id="banner-title">FASE 2: TORRES DE CIUDAD</div>
-  </div>
-
-  <!-- Pantalla de Inicio -->
-  <div class="overlay-screen" id="start-screen">
-    <div class="modal-card">
-      <div class="game-logo-badge">2.5D LOW-POLY ARCADE</div>
-      <h1 class="game-title">FLAPY PLANE</h1>
-      <p class="game-subtitle">
-        Pilota tu biplano a través de un mundo 3D con desafíos que evolucionan según tu puntuación.
-      </p>
-
-      <div class="progression-preview">
-        <div class="prog-item">
-          <span class="prog-icon">🟢</span>
-          <span>Tuberías</span>
-        </div>
-        <div class="prog-item">
-          <span class="prog-icon">🏙️</span>
-          <span>Torres</span>
-        </div>
-        <div class="prog-item">
-          <span class="prog-icon">⭕</span>
-          <span>Anillos</span>
-        </div>
-        <div class="prog-item">
-          <span class="prog-icon">⛈️</span>
-          <span>Tormenta</span>
-        </div>
-      </div>
-
-      <button class="btn-primary" id="btn-start">¡DESPEGAR AHORA!</button>
-      <div class="controls-hint">Toca la pantalla para volar</div>
-    </div>
   </div>
 
   <!-- Pantalla de Pausa -->

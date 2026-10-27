@@ -21,9 +21,9 @@ export function createWorld(canvas) {
   const targetFogColor = new THREE.Color(PHASES[0].fogHex);
 
   scene.background = currentSkyColor;
-  scene.fog = new THREE.Fog(currentFogColor, 26, 75);
+  scene.fog = new THREE.Fog(currentFogColor, 58, 135);
 
-  const camera = new THREE.PerspectiveCamera(44, 1, 0.5, 130);
+  const camera = new THREE.PerspectiveCamera(44, 1, 0.5, 160);
 
   let planeAnchorX = -3.8;
   const cameraBasePos = new THREE.Vector3(0, 0.8, 25);

@@ -45,7 +45,7 @@ html, body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  padding: max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(22px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
 
 /* Barra superior */
@@ -61,61 +61,59 @@ html, body {
 .hud-stats {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .phase-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--glass);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1.5px solid var(--glass-border);
+  background: rgba(15, 23, 42, 0.45);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
   color: #fff;
-  padding: 6px 12px;
+  padding: 5px 11px;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 2px 0 rgba(15, 23, 42, 0.7);
 }
 
 .phase-dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #4ade80;
-  box-shadow: 0 0 8px #4ade80;
+  box-shadow: 0 0 6px #4ade80;
 }
 
 .best-mini {
   color: #ffffff;
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-shadow: 0 2px 0 #1e293b;
   padding-left: 4px;
 }
 
 .score-center {
   position: absolute;
-  left: 50%;
-  top: max(14px, env(safe-area-inset-top));
+  left: 60%;
+  top: max(12px, env(safe-area-inset-top));
   transform: translateX(-50%);
   text-align: center;
   pointer-events: none;
 }
 
 #score-display {
-  font-size: clamp(2.8rem, 8vw, 4.4rem);
+  font-size: clamp(2.8rem, 8vw, 4.2rem);
   font-weight: 900;
   color: #ffffff;
   line-height: 1;
   letter-spacing: -0.02em;
   text-shadow:
     0 4px 0 #1e293b,
-    0 8px 20px rgba(0, 0, 0, 0.45);
+    0 6px 14px rgba(0, 0, 0, 0.35);
   transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -126,34 +124,35 @@ html, body {
 
 .hud-controls {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   pointer-events: auto;
 }
 
 .icon-btn {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  border: 1.5px solid var(--glass-border);
-  background: var(--glass);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
   color: #ffffff;
-  font-size: 1.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  transition: transform 0.12s ease, background 0.15s ease;
+  filter: drop-shadow(0 3px 0 #1e293b) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.28));
+  transition: transform 0.1s ease, opacity 0.15s ease;
 }
 
 .icon-btn:hover {
-  background: rgba(30, 41, 59, 0.88);
+  transform: scale(1.08);
 }
 
 .icon-btn:active {
-  transform: scale(0.92);
+  transform: translateY(2px) scale(0.92);
+}
+
+.hidden-icon {
+  display: none;
 }
 
 /* Banner de nueva fase */
@@ -194,7 +193,7 @@ html, body {
   margin-top: 2px;
 }
 
-/* Pantallas modales (Inicio, Pausa, Game Over) */
+/* Pantallas modales (Pausa, Game Over) */
 .overlay-screen {
   position: fixed;
   inset: 0;
@@ -265,31 +264,6 @@ html, body {
   color: #cbd5e1;
   line-height: 1.45;
   margin-bottom: 20px;
-}
-
-.progression-preview {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 12px 10px;
-  margin-bottom: 22px;
-}
-
-.prog-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.7rem;
-  color: #e2e8f0;
-  font-weight: 700;
-}
-
-.prog-icon {
-  font-size: 1.3rem;
 }
 
 .stats-grid {
@@ -398,11 +372,13 @@ html, body {
 /* Indicador inferior de toque en partida */
 .tap-hint-bottom {
   text-align: center;
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 700;
-  font-size: 0.85rem;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
-  letter-spacing: 0.04em;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 0.95rem;
+  text-shadow:
+    0 2px 0 #1e293b,
+    0 4px 10px rgba(0, 0, 0, 0.55);
+  letter-spacing: 0.05em;
   transition: opacity 0.4s ease;
 }
 

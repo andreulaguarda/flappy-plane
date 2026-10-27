@@ -30,11 +30,15 @@ export function createObstacleSystem(scene) {
     const root = new THREE.Group();
     const topBottomY = gapY + gapHeight * 0.5;
     const botTopY = gapY - gapHeight * 0.5;
-    const pipeHeight = 18;
+    const topPipeHeight = 18;
+    const botPipeHeight = Math.max(2, (botTopY - 0.35) - (CONFIG.floorY - 1.2));
 
     const topPipe = new THREE.Group();
-    const topBody = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, pipeHeight, 10), MATS.pipeBody);
-    topBody.position.y = topBottomY + pipeHeight * 0.5 + 0.35;
+    const topBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.05, 1.05, topPipeHeight, 10),
+      MATS.pipeBody
+    );
+    topBody.position.y = topBottomY + topPipeHeight * 0.5 + 0.35;
     topBody.castShadow = true;
     topBody.receiveShadow = true;
 
@@ -44,8 +48,11 @@ export function createObstacleSystem(scene) {
     topPipe.add(topBody, topCap);
 
     const botPipe = new THREE.Group();
-    const botBody = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, pipeHeight, 10), MATS.pipeBody);
-    botBody.position.y = botTopY - pipeHeight * 0.5 - 0.35;
+    const botBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.05, 1.05, botPipeHeight, 10),
+      MATS.pipeBody
+    );
+    botBody.position.y = botTopY - 0.35 - botPipeHeight * 0.5;
     botBody.castShadow = true;
     botBody.receiveShadow = true;
 
@@ -62,10 +69,11 @@ export function createObstacleSystem(scene) {
     const root = new THREE.Group();
     const topBottomY = gapY + gapHeight * 0.5;
     const botTopY = gapY - gapHeight * 0.5;
-    const h = 18;
+    const topH = 18;
+    const botH = Math.max(2, botTopY - (CONFIG.floorY - 1.2));
 
-    const botTower = new THREE.Mesh(new THREE.BoxGeometry(2.2, h, 2.2), MATS.towerWall);
-    botTower.position.y = botTopY - h * 0.5;
+    const botTower = new THREE.Mesh(new THREE.BoxGeometry(2.2, botH, 2.2), MATS.towerWall);
+    botTower.position.y = botTopY - botH * 0.5;
     botTower.castShadow = true;
     botTower.receiveShadow = true;
     root.add(botTower);
@@ -75,15 +83,17 @@ export function createObstacleSystem(scene) {
     root.add(roof);
 
     for (let row = 1; row <= 5; row++) {
+      const winY = botTopY - row * 1.4;
+      if (winY < CONFIG.floorY + 0.5) break;
       for (let col = -1; col <= 1; col += 2) {
         const win = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.52), MATS.windowGlow);
-        win.position.set(col * 0.45, botTopY - row * 1.4, 1.12);
+        win.position.set(col * 0.45, winY, 1.12);
         root.add(win);
       }
     }
 
-    const topTower = new THREE.Mesh(new THREE.BoxGeometry(2.1, h, 2.1), MATS.towerRoof);
-    topTower.position.y = topBottomY + h * 0.5;
+    const topTower = new THREE.Mesh(new THREE.BoxGeometry(2.1, topH, 2.1), MATS.towerRoof);
+    topTower.position.y = topBottomY + topH * 0.5;
     topTower.castShadow = true;
     root.add(topTower);
 
@@ -106,13 +116,21 @@ export function createObstacleSystem(scene) {
     ringMesh.castShadow = true;
     root.add(ringMesh);
 
-    const pylonH = 16;
-    const topPylon = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, pylonH, 8), MATS.ringPylon);
-    topPylon.position.y = gapY + ringRadius + tubeRadius + pylonH * 0.5;
+    const topPylonH = 16;
+    const topPylon = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.45, 0.45, topPylonH, 8),
+      MATS.ringPylon
+    );
+    topPylon.position.y = gapY + ringRadius + tubeRadius + topPylonH * 0.5;
     root.add(topPylon);
 
-    const botPylon = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, pylonH, 8), MATS.ringPylon);
-    botPylon.position.y = gapY - ringRadius - tubeRadius - pylonH * 0.5;
+    const botRingBottom = gapY - ringRadius - tubeRadius;
+    const botPylonH = Math.max(1.5, botRingBottom - (CONFIG.floorY - 1.5));
+    const botPylon = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.45, 0.45, botPylonH, 8),
+      MATS.ringPylon
+    );
+    botPylon.position.y = botRingBottom - botPylonH * 0.5;
     root.add(botPylon);
 
     return { root, ringMesh, halfWidth: 0.75 };
@@ -123,7 +141,7 @@ export function createObstacleSystem(scene) {
     const topBottomY = gapY + gapHeight * 0.5;
     const botTopY = gapY - gapHeight * 0.5;
 
-    const spireH = 18;
+    const spireH = Math.max(2.5, (botTopY + 0.6) - (CONFIG.floorY - 1.5));
     const botSpire = new THREE.Mesh(new THREE.ConeGeometry(1.85, spireH, 6), MATS.rockSpire);
     botSpire.position.y = botTopY - spireH * 0.5 + 0.6;
     botSpire.castShadow = true;
