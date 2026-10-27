@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#38bdf8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Flapy Plane - 3D Arcade</title>
+  <style>
+    :root {
+      --primary: #ff5733;
+      --primary-dark: #c70039;
+      --accent: #facc15;
+      --sky-dark: #0f172a;
+      --glass: rgba(15, 23, 42, 0.72);
+      --glass-border: rgba(255, 255, 255, 0.22);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #38bdf8;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      touch-action: none;
+    }
+
+    #game-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+
+    /* Capa de interfaz (HUD) */
+    #ui-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    }
+
+    /* Barra superior */
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .hud-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .phase-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1.5px solid var(--glass-border);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .phase-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 8px #4ade80;
+    }
+
+    .best-mini {
+      color: #ffffff;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+      padding-left: 4px;
+    }
+
+    .score-center {
+      position: absolute;
+      left: 50%;
+      top: max(14px, env(safe-area-inset-top));
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    #score-display {
+      font-size: clamp(2.8rem, 8vw, 4.4rem);
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      text-shadow:
+        0 4px 0 #1e293b,
+        0 8px 20px rgba(0, 0, 0, 0.45);
+      transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    #score-display.pop {
+      transform: scale(1.28);
+      color: var(--accent);
+    }
+
+    .hud-controls {
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .icon-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      border: 1.5px solid var(--glass-border);
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #ffffff;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      transition: transform 0.12s ease, background 0.15s ease;
+    }
+
+    .icon-btn:hover {
+      background: rgba(30, 41, 59, 0.88);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* Banner de nueva fase */
+    #phase-banner {
+      position: fixed;
+      top: 19%;
+      left: 50%;
+      transform: translate(-50%, -20px) scale(0.9);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+      border: 2px solid var(--accent);
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 16px;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 15;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+      transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    #phase-banner.visible {
+      opacity: 1;
+      transform: translate(-50%, 0) scale(1);
+    }
+
+    #phase-banner .banner-sub {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    #phase-banner .banner-title {
+      font-size: 1.15rem;
+      font-weight: 900;
+      margin-top: 2px;
+    }
+
+    /* Pantallas modales (Inicio, Pausa, Game Over) */
+    .overlay-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.35) 0%, rgba(15, 23, 42, 0.75) 100%);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      opacity: 1;
+      transition: opacity 0.25s ease;
+      pointer-events: auto;
+    }
+
+    .overlay-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 390px;
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.94) 0%, rgba(15, 23, 42, 0.96) 100%);
+      border: 2px solid rgba(255, 255, 255, 0.18);
+      border-radius: 28px;
+      padding: 28px 24px;
+      text-align: center;
+      color: #ffffff;
+      box-shadow: 0 24px 50px rgba(0, 0, 0, 0.55);
+      transform: translateY(0) scale(1);
+      transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .overlay-screen.hidden .modal-card {
+      transform: translateY(20px) scale(0.94);
+    }
+
+    .game-logo-badge {
+      display: inline-block;
+      background: rgba(250, 204, 21, 0.16);
+      color: var(--accent);
+      border: 1px solid rgba(250, 204, 21, 0.4);
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .game-title {
+      font-size: clamp(2.2rem, 7vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      background: linear-gradient(180deg, #ffffff 0%, #fde047 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.4));
+      margin-bottom: 10px;
+    }
+
+    .game-subtitle {
+      font-size: 0.95rem;
+      color: #cbd5e1;
+      line-height: 1.45;
+      margin-bottom: 20px;
+    }
+
+    .progression-preview {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 12px 10px;
+      margin-bottom: 22px;
+    }
+
+    .prog-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      color: #e2e8f0;
+      font-weight: 700;
+    }
+
+    .prog-icon {
+      font-size: 1.3rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 18px 0 22px;
+    }
+
+    .stat-box {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      padding: 12px 10px;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 1.9rem;
+      font-weight: 900;
+      color: #ffffff;
+    }
+
+    .stat-value.gold {
+      color: var(--accent);
+    }
+
+    .medal-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: rgba(250, 204, 21, 0.1);
+      border: 1px solid rgba(250, 204, 21, 0.3);
+      border-radius: 14px;
+      padding: 10px 14px;
+      margin-bottom: 20px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: #fef08a;
+    }
+
+    .btn-primary {
+      width: 100%;
+      border: none;
+      border-radius: 16px;
+      padding: 16px 22px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #ffffff;
+      background: linear-gradient(180deg, #ff6b4a 0%, #e11d48 100%);
+      box-shadow: 0 6px 0 #9f1239, 0 12px 24px rgba(225, 29, 72, 0.4);
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn-primary:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #9f1239, 0 6px 12px rgba(225, 29, 72, 0.4);
+    }
+
+    .btn-secondary {
+      width: 100%;
+      margin-top: 12px;
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      border-radius: 16px;
+      padding: 13px 20px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-secondary:active {
+      transform: scale(0.98);
+    }
+
+    .controls-hint {
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    /* Indicador inferior de toque en partida */
+    .tap-hint-bottom {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+      letter-spacing: 0.04em;
+      transition: opacity 0.4s ease;
+    }
+
+    .tap-hint-bottom.fade-out {
+      opacity: 0;
+    }
+  </style>
+
+  <!-- Three.js vía CDN -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+
+  <!-- HUD en partida -->
+  <div id="ui-layer">
+    <div class="hud-top">
+      <div class="hud-stats">
+        <div class="phase-badge">
+          <span class="phase-dot" id="phase-dot"></span>
+          <span id="phase-name">FASE 1: TUBERÍAS</span>
+        </div>
+        <div class="best-mini">RÉCORD: <span id="hud-best">0</span></div>
+      </div>
+
+      <div class="score-center">
+        <div id="score-display">0</div>
+      </div>
+
+      <div class="hud-controls">
+        <button class="icon-btn" id="btn-sound" title="Activar/Desactivar sonido" aria-label="Sonido">🔊</button>
+        <button class="icon-btn" id="btn-pause" title="Pausar juego (P)" aria-label="Pausa">⏸</button>
+      </div>
+    </div>
+
+    <div class="tap-hint-bottom" id="tap-hint">
+      TOCA LA PANTALLA O PULSA ESPACIO PARA ELEVARTE
+    </div>
+  </div>
+
+  <!-- Notificación flotante de cambio de fase -->
+  <div id="phase-banner">
+    <div class="banner-sub" id="banner-sub">¡NUEVA ZONA DESBLOQUEADA!</div>
+    <div class="banner-title" id="banner-title">FASE 2: TORRES DE CIUDAD</div>
+  </div>
+
+  <!-- Pantalla de Inicio -->
+  <div class="overlay-screen" id="start-screen">
+    <div class="modal-card">
+      <div class="game-logo-badge">2.5D LOW-POLY ARCADE</div>
+      <h1 class="game-title">FLAPY PLANE</h1>
+      <p class="game-subtitle">
+        Pilota tu biplano a través de un mundo 3D con desafíos que evolucionan según tu puntuación.
+      </p>
+
+      <div class="progression-preview">
+        <div class="prog-item">
+          <span class="prog-icon">🟢</span>
+          <span>Tuberías</span>
+        </div>
+        <div class="prog-item">
+          <span class="prog-icon">🏙️</span>
+          <span>Torres</span>
+        </div>
+        <div class="prog-item">
+          <span class="prog-icon">⭕</span>
+          <span>Anillos</span>
+        </div>
+        <div class="prog-item">
+          <span class="prog-icon">⛈️</span>
+          <span>Tormenta</span>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btn-start">¡DESPEGAR AHORA!</button>
+      <div class="controls-hint">Móvil: Toca la pantalla · PC: Clic o Espacio</div>
+    </div>
+  </div>
+
+  <!-- Pantalla de Pausa -->
+  <div class="overlay-screen hidden" id="pause-screen">
+    <div class="modal-card">
+      <div class="game-logo-badge">VUELO EN ESPERA</div>
+      <h2 class="game-title" style="font-size: 2.1rem;">PAUSA</h2>
+      <p class="game-subtitle">Tómate un respiro antes de volver a los cielos.</p>
+      <button class="btn-primary" id="btn-resume">CONTINUAR VUELO</button>
+      <button class="btn-secondary" id="btn-restart-pause">REINICIAR PARTIDA</button>
+    </div>
+  </div>
+
+  <!-- Pantalla de Game Over -->
+  <div class="overlay-screen hidden" id="gameover-screen">
+    <div class="modal-card">
+      <div class="game-logo-badge" id="go-phase-reached">FASE 1 ALCANZADA</div>
+      <h2 class="game-title" style="font-size: 2.2rem;">¡ATERRIZAJE FORZOSO!</h2>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-label">Puntuación</div>
+          <div class="stat-value" id="go-score">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Mejor Récord</div>
+          <div class="stat-value gold" id="go-best">0</div>
+        </div>
+      </div>
+
+      <div class="medal-row" id="go-medal-row">
+        <span id="go-medal-icon">🥉</span>
+        <span id="go-medal-text">Rango: Piloto Novato</span>
+      </div>
+
+      <button class="btn-primary" id="btn-retry">VOLAR DE NUEVO</button>
+      <div class="controls-hint">Pulsa Espacio o Toca el botón para reintentar</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // =========================================================================
+    // 1. CONFIGURACIÓN Y FASES DE PROGRESIÓN
+    // =========================================================================
+    const STORAGE_BEST_KEY = 'flapy_plane_best_score_v1';
+    const STORAGE_MUTE_KEY = 'flapy_plane_mute_v1';
+
+    const CONFIG = {
+      gravity: -28.5,
+      jumpImpulse: 10.6,
+      maxFallSpeed: -16.5,
+      maxRiseSpeed: 12.5,
+      ceilingY: 8.6,
+      floorY: -7.8,
+      planeRadius: 0.68,
+      baseSpeed: 8.4,
+      maxSpeed: 14.5,
+      spawnIntervalDist: 11.2,
+      obstacleDespawnX: -24,
+      obstacleSpawnX: 28
+    };
+
+    const PHASES = [
+      {
+        id: 1,
+        minScore: 0,
+        name: 'FASE 1: TUBERÍAS',
+        bannerSub: 'ZONA INICIAL',
+        bannerTitle: 'FASE 1: VALLE DE TUBERÍAS',
+        dotColor: '#4ade80',
+        skyHex: 0x38bdf8,
+        fogHex: 0xbae6fd,
+        lightColor: 0xfffbeb,
+        gapSize: 4.9,
+        types: ['pipe']
+      },
+      {
+        id: 2,
+        minScore: 6,
+        name: 'FASE 2: CIUDAD',
+        bannerSub: '¡NUEVA ZONA DESBLOQUEADA!',
+        bannerTitle: 'FASE 2: TORRES DE CIUDAD',
+        dotColor: '#facc15',
+        skyHex: 0xf59e0b,
+        fogHex: 0xfde68a,
+        lightColor: 0xffedd5,
+        gapSize: 4.65,
+        types: ['tower']
+      },
+      {
+        id: 3,
+        minScore: 13,
+        name: 'FASE 3: ANILLOS',
+        bannerSub: '¡ACROBACIA AÉREA!',
+        bannerTitle: 'FASE 3: ANILLOS DORADOS',
+        dotColor: '#38bdf8',
+        skyHex: 0x6366f1,
+        fogHex: 0xc7d2fe,
+        lightColor: 0xe0e7ff,
+        gapSize: 4.5,
+        types: ['ring']
+      },
+      {
+        id: 4,
+        minScore: 21,
+        name: 'FASE 4: TORMENTA',
+        bannerSub: '¡PELIGRO METEOROLÓGICO!',
+        bannerTitle: 'FASE 4: PICOS Y TORMENTA',
+        dotColor: '#c084fc',
+        skyHex: 0x1e1b4b,
+        fogHex: 0x4c1d95,
+        lightColor: 0xd8b4fe,
+        gapSize: 4.35,
+        types: ['storm']
+      },
+      {
+        id: 5,
+        minScore: 30,
+        name: 'FASE 5: CAOS TOTAL',
+        bannerSub: '¡NIVEL MAESTRO!',
+        bannerTitle: 'FASE 5: MEZCLA EXTREMA',
+        dotColor: '#f43f5e',
+        skyHex: 0x0f172a,
+        fogHex: 0x334155,
+        lightColor: 0xfda4af,
+        gapSize: 4.2,
+        types: ['pipe', 'tower', 'ring', 'storm']
+      }
+    ];
+
+    // =========================================================================
+    // 2. SISTEMA DE SONIDO SINTETIZADO (WEB AUDIO API)
+    // =========================================================================
+    class SoundSystem {
+      constructor() {
+        this.ctx = null;
+        this.muted = localStorage.getItem(STORAGE_MUTE_KEY) === 'true';
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            this.ctx = new AudioCtx();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        localStorage.setItem(STORAGE_MUTE_KEY, String(this.muted));
+        if (!this.muted) {
+          this.init();
+          this.playClick();
+        }
+        return this.muted;
+      }
+
+      playFlap() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(520, now + 0.11);
+
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.12);
+      }
+
+      playScore(isRing = false) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const notes = isRing ? [587.33, 783.99, 1046.5] : [523.25, 659.25];
+
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.065);
+
+          gain.gain.setValueAtTime(0.16, now + idx * 0.065);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.065 + 0.18);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now + idx * 0.065);
+          osc.stop(now + idx * 0.065 + 0.19);
+        });
+      }
+
+      playPhaseUp() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const notes = [440, 554.37, 659.25, 880];
+        notes.forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + i * 0.08);
+
+          gain.gain.setValueAtTime(0.18, now + i * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.28);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now + i * 0.08);
+          osc.stop(now + i * 0.08 + 0.29);
+        });
+      }
+
+      playCrash() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+
+        // Ruido blanco de impacto
+        const bufferSize = this.ctx.sampleRate * 0.35;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.1));
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(900, now);
+        filter.frequency.linearRampToValueAtTime(120, now + 0.35);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.32, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start(now);
+
+        // Tono grave descendente
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(170, now);
+        osc.frequency.exponentialRampToValueAtTime(42, now + 0.38);
+
+        oscGain.gain.setValueAtTime(0.22, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+
+        osc.connect(oscGain);
+        oscGain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.39);
+      }
+
+      playClick() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(620, now);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      }
+    }
+
+    const sound = new SoundSystem();
+
+    // =========================================================================
+    // 3. ESCENA THREE.JS, CÁMARA RESPONSIVE E ILUMINACIÓN
+    // =========================================================================
+    const canvas = document.getElementById('game-canvas');
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+
+    const scene = new THREE.Scene();
+    const targetSkyColor = new THREE.Color(PHASES[0].skyHex);
+    const currentSkyColor = new THREE.Color(PHASES[0].skyHex);
+    const targetFogColor = new THREE.Color(PHASES[0].fogHex);
+    const currentFogColor = new THREE.Color(PHASES[0].fogHex);
+
+    scene.background = currentSkyColor;
+    scene.fog = new THREE.Fog(currentFogColor, 26, 75);
+
+    const camera = new THREE.PerspectiveCamera(44, window.innerWidth / window.innerHeight, 0.5, 130);
+
+    // Posición base X del avión ajustable según proporción de pantalla (móvil vertical vs horizontal)
+    let planeAnchorX = -3.8;
+    let cameraBasePos = new THREE.Vector3(0, 0.8, 25);
+    let cameraLookTarget = new THREE.Vector3(1.2, 0.3, 0);
+    let screenShakeTime = 0;
+
+    function updateCameraResponsive() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const aspect = w / h;
+
+      renderer.setSize(w, h);
+      camera.aspect = aspect;
+      camera.updateProjectionMatrix();
+
+      // Calculamos Z necesario para ver siempre toda la altura de juego (-9.5 a +9.5)
+      // y suficiente anchura horizontal de anticipación en móviles en vertical.
+      const halfFovRad = THREE.MathUtils.degToRad(camera.fov * 0.5);
+      const minVisibleHeight = 21.5;
+      const minVisibleWidth = 16.5;
+
+      const zForHeight = (minVisibleHeight * 0.5) / Math.tan(halfFovRad);
+      const zForWidth = (minVisibleWidth * 0.5) / (Math.tan(halfFovRad) * aspect);
+      const optimalZ = Math.max(zForHeight, Math.min(zForWidth, 42));
+
+      if (aspect < 0.75) {
+        // Móvil vertical: centramos un poco la cámara hacia adelante para dar más margen de visión a la derecha
+        planeAnchorX = -3.2;
+        cameraBasePos.set(1.3, 0.6, optimalZ);
+        cameraLookTarget.set(1.6, 0.2, 0);
+      } else {
+        // Escritorio / horizontal
+        planeAnchorX = -4.5;
+        cameraBasePos.set(0.5, 0.7, optimalZ);
+        cameraLookTarget.set(0.8, 0.2, 0);
+      }
+    }
+
+    window.addEventListener('resize', updateCameraResponsive);
+
+    // Iluminación
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x334155, 1.15);
+    hemiLight.position.set(0, 25, 0);
+    scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.7);
+    dirLight.position.set(12, 24, 18);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    dirLight.shadow.camera.near = 5;
+    dirLight.shadow.camera.far = 65;
+    const d = 22;
+    dirLight.shadow.camera.left = -d;
+    dirLight.shadow.camera.right = d;
+    dirLight.shadow.camera.top = d;
+    dirLight.shadow.camera.bottom = -d;
+    scene.add(dirLight);
+
+    // =========================================================================
+    // 4. CONSTRUCCIÓN DEL AVIÓN LOW-POLY ("FLAPY PLANE")
+    // =========================================================================
+    function createPlaneMesh() {
+      const group = new THREE.Group();
+
+      const redMat = new THREE.MeshStandardMaterial({ color: 0xff3b30, roughness: 0.45, flatShading: true });
+      const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5, flatShading: true });
+      const yellowMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4, flatShading: true });
+      const darkMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, flatShading: true });
+      const glassMat = new THREE.MeshStandardMaterial({
+        color: 0x7dd3fc,
+        roughness: 0.15,
+        metalness: 0.3,
+        transparent: true,
+        opacity: 0.82,
+        flatShading: true
+      });
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xfdba74, roughness: 0.6, flatShading: true });
+
+      // Fuselaje principal
+      const bodyGeo = new THREE.CylinderGeometry(0.42, 0.52, 1.55, 8);
+      bodyGeo.rotateZ(Math.PI / 2);
+      const body = new THREE.Mesh(bodyGeo, redMat);
+      body.castShadow = true;
+      body.receiveShadow = true;
+      group.add(body);
+
+      // Franja blanca central
+      const stripeGeo = new THREE.CylinderGeometry(0.47, 0.5, 0.42, 8);
+      stripeGeo.rotateZ(Math.PI / 2);
+      const stripe = new THREE.Mesh(stripeGeo, whiteMat);
+      stripe.position.x = -0.05;
+      stripe.castShadow = true;
+      group.add(stripe);
+
+      // Morro delantero amarillo
+      const noseGeo = new THREE.CylinderGeometry(0.24, 0.42, 0.42, 8);
+      noseGeo.rotateZ(-Math.PI / 2);
+      const nose = new THREE.Mesh(noseGeo, yellowMat);
+      nose.position.x = 0.96;
+      nose.castShadow = true;
+      group.add(nose);
+
+      // Cono de cola
+      const tailConeGeo = new THREE.CylinderGeometry(0.16, 0.52, 0.85, 8);
+      tailConeGeo.rotateZ(Math.PI / 2);
+      const tailCone = new THREE.Mesh(tailConeGeo, redMat);
+      tailCone.position.x = -1.15;
+      tailCone.castShadow = true;
+      group.add(tailCone);
+
+      // Timón vertical de cola
+      const finGeo = new THREE.BoxGeometry(0.52, 0.68, 0.12);
+      const fin = new THREE.Mesh(finGeo, redMat);
+      fin.position.set(-1.35, 0.36, 0);
+      fin.rotation.z = 0.25;
+      fin.castShadow = true;
+      group.add(fin);
+
+      // Estabilizador horizontal de cola
+      const hStabGeo = new THREE.BoxGeometry(0.42, 0.09, 1.35);
+      const hStab = new THREE.Mesh(hStabGeo, whiteMat);
+      hStab.position.set(-1.32, 0.1, 0);
+      hStab.castShadow = true;
+      group.add(hStab);
+
+      // Ala superior (Biplano)
+      const topWingGeo = new THREE.BoxGeometry(0.76, 0.1, 2.75);
+      const topWing = new THREE.Mesh(topWingGeo, whiteMat);
+      topWing.position.set(0.12, 0.68, 0);
+      topWing.castShadow = true;
+      topWing.receiveShadow = true;
+      group.add(topWing);
+
+      // Ala inferior
+      const botWingGeo = new THREE.BoxGeometry(0.72, 0.1, 2.45);
+      const botWing = new THREE.Mesh(botWingGeo, redMat);
+      botWing.position.set(0.08, -0.32, 0);
+      botWing.castShadow = true;
+      botWing.receiveShadow = true;
+      group.add(botWing);
+
+      // Soportes entre alas
+      const strutGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.98, 6);
+      [-0.85, 0.85].forEach((zPos) => {
+        const strut = new THREE.Mesh(strutGeo, yellowMat);
+        strut.position.set(0.1, 0.18, zPos);
+        group.add(strut);
+      });
+
+      // Cabina y piloto
+      const canopyGeo = new THREE.SphereGeometry(0.32, 8, 6);
+      canopyGeo.scale(1.3, 0.85, 0.85);
+      const canopy = new THREE.Mesh(canopyGeo, glassMat);
+      canopy.position.set(-0.15, 0.38, 0);
+      group.add(canopy);
+
+      const pilotHead = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), skinMat);
+      pilotHead.position.set(-0.22, 0.44, 0);
+      group.add(pilotHead);
+
+      // Tren de aterrizaje
+      const wheelGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.12, 10);
+      wheelGeo.rotateX(Math.PI / 2);
+      [-0.38, 0.38].forEach((zPos) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.4, 6), darkMat);
+        leg.position.set(0.25, -0.52, zPos * 0.85);
+        leg.rotation.z = 0.2;
+        group.add(leg);
+
+        const wheel = new THREE.Mesh(wheelGeo, darkMat);
+        wheel.position.set(0.32, -0.7, zPos);
+        group.add(wheel);
+      });
+
+      // Hélice giratoria
+      const propGroup = new THREE.Group();
+      propGroup.position.set(1.22, 0, 0);
+
+      const spinner = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.25, 8), darkMat);
+      spinner.rotation.z = -Math.PI / 2;
+      spinner.position.x = 0.06;
+      propGroup.add(spinner);
+
+      const bladeGeo = new THREE.BoxGeometry(0.05, 1.35, 0.16);
+      const blade1 = new THREE.Mesh(bladeGeo, darkMat);
+      const blade2 = new THREE.Mesh(bladeGeo, darkMat);
+      blade2.rotation.x = Math.PI / 2;
+      propGroup.add(blade1, blade2);
+
+      group.add(propGroup);
+
+      return { group, propGroup };
+    }
+
+    const planeObj = createPlaneMesh();
+    const plane = planeObj.group;
+    const propeller = planeObj.propGroup;
+    scene.add(plane);
+
+    // =========================================================================
+    // 5. ENTORNO PARALLAX 3D (SUELO, MONTAÑAS, NUBES, SOL)
+    // =========================================================================
+    const envGroup = new THREE.Group();
+    scene.add(envGroup);
+
+    // Sol decorativo al fondo
+    const sunMesh = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(5.5, 1),
+      new THREE.MeshBasicMaterial({ color: 0xfde047 })
+    );
+    sunMesh.position.set(18, 12, -52);
+    envGroup.add(sunMesh);
+
+    // Banda de suelo/agua peligrosa en el límite inferior
+    const groundChunks = [];
+    const groundChunkWidth = 12;
+    const groundMatWater = new THREE.MeshStandardMaterial({
+      color: 0x0284c7,
+      roughness: 0.35,
+      flatShading: true
+    });
+    const groundMatGrass = new THREE.MeshStandardMaterial({
+      color: 0x22c55e,
+      roughness: 0.7,
+      flatShading: true
+    });
+    const groundMatSoil = new THREE.MeshStandardMaterial({
+      color: 0xb45309,
+      roughness: 0.85,
+      flatShading: true
+    });
+
+    function createGroundChunk(xPos) {
+      const chunk = new THREE.Group();
+      chunk.position.set(xPos, CONFIG.floorY - 1.2, 0);
+
+      // Base de tierra
+      const soil = new THREE.Mesh(new THREE.BoxGeometry(groundChunkWidth, 2.4, 8), groundMatSoil);
+      soil.position.y = -0.4;
+      soil.receiveShadow = true;
+      chunk.add(soil);
+
+      // Franja superior de césped low-poly
+      const grass = new THREE.Mesh(new THREE.BoxGeometry(groundChunkWidth, 0.55, 8.2), groundMatGrass);
+      grass.position.y = 0.95;
+      grass.receiveShadow = true;
+      chunk.add(grass);
+
+      // Río/Agua frontal
+      const water = new THREE.Mesh(new THREE.BoxGeometry(groundChunkWidth, 1.8, 10), groundMatWater);
+      water.position.set(0, -0.15, 7);
+      chunk.add(water);
+
+      // Pequeños árboles y rocas low-poly en el borde trasero del suelo
+      for (let i = 0; i < 3; i++) {
+        const treeX = (i - 1) * 3.6 + (Math.random() - 0.5) * 1.2;
+        const treeZ = -2.2 - Math.random() * 1.2;
+        const trunk = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.12, 0.16, 0.6, 5),
+          groundMatSoil
+        );
+        trunk.position.set(treeX, 1.4, treeZ);
+        const foliage = new THREE.Mesh(
+          new THREE.ConeGeometry(0.65, 1.45, 6),
+          groundMatGrass
+        );
+        foliage.position.set(treeX, 2.15, treeZ);
+        foliage.castShadow = true;
+        chunk.add(trunk, foliage);
+      }
+
+      envGroup.add(chunk);
+      return chunk;
+    }
+
+    for (let i = -3; i <= 4; i++) {
+      groundChunks.push(createGroundChunk(i * groundChunkWidth));
+    }
+
+    // Montañas lejanas (Parallax)
+    const mountains = [];
+    const mountainColors = [0x475569, 0x64748b, 0x334155];
+    for (let i = 0; i < 14; i++) {
+      const mGroup = new THREE.Group();
+      const height = 10 + Math.random() * 16;
+      const radius = 6 + Math.random() * 7;
+      const mMat = new THREE.MeshStandardMaterial({
+        color: mountainColors[i % mountainColors.length],
+        roughness: 0.85,
+        flatShading: true
+      });
+      const mMesh = new THREE.Mesh(new THREE.ConeGeometry(radius, height, 6), mMat);
+      mMesh.position.y = height * 0.5 - 11;
+      mGroup.add(mMesh);
+
+      // Cumbre nevada
+      const snowCap = new THREE.Mesh(
+        new THREE.ConeGeometry(radius * 0.36, height * 0.36, 6),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5, flatShading: true })
+      );
+      snowCap.position.y = height * 0.82 - 11;
+      mGroup.add(snowCap);
+
+      mGroup.position.set(-45 + i * 10 + Math.random() * 3, 0, -24 - Math.random() * 20);
+      mGroup.userData.speedFactor = 0.18 + Math.random() * 0.14;
+      envGroup.add(mGroup);
+      mountains.push(mGroup);
+    }
+
+    // Nubes low-poly decorativas
+    const clouds = [];
+    const cloudMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.6,
+      flatShading: true
+    });
+
+    function createCloud() {
+      const cGroup = new THREE.Group();
+      const puffs = 3 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < puffs; i++) {
+        const r = 0.8 + Math.random() * 0.85;
+        const puff = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), cloudMat);
+        puff.position.set(
+          (i - (puffs - 1) * 0.5) * 1.05,
+          (Math.random() - 0.5) * 0.35,
+          (Math.random() - 0.5) * 0.4
+        );
+        cGroup.add(puff);
+      }
+      return cGroup;
+    }
+
+    for (let i = 0; i < 12; i++) {
+      const c = createCloud();
+      c.position.set(
+        -35 + i * 8 + Math.random() * 4,
+        2 + Math.random() * 9,
+        -8 - Math.random() * 22
+      );
+      const scale = 0.7 + Math.random() * 0.9;
+      c.scale.setScalar(scale);
+      c.userData.speedFactor = 0.25 + Math.random() * 0.35;
+      envGroup.add(c);
+      clouds.push(c);
+    }
+
+    // =========================================================================
+    // 6. GENERADOR DE OBSTÁCULOS CON PROGRESIÓN (4 ARQUETIPOS)
+    // =========================================================================
+    const obstacles = [];
+    const obstacleGroup = new THREE.Group();
+    scene.add(obstacleGroup);
+
+    // Materiales compartidos para optimizar rendimiento
+    const MATS = {
+      pipeBody: new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.4, flatShading: true }),
+      pipeRim: new THREE.MeshStandardMaterial({ color: 0x059669, roughness: 0.4, flatShading: true }),
+      towerWall: new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.55, flatShading: true }),
+      towerRoof: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7, flatShading: true }),
+      windowGlow: new THREE.MeshBasicMaterial({ color: 0xfef08a }),
+      zeppBody: new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.45, flatShading: true }),
+      ringGold: new THREE.MeshStandardMaterial({
+        color: 0xfacc15,
+        metalness: 0.45,
+        roughness: 0.25,
+        flatShading: true
+      }),
+      ringPylon: new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.6, flatShading: true }),
+      rockSpire: new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85, flatShading: true }),
+      stormCloud: new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7, flatShading: true }),
+      lightning: new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+    };
+
+    function buildPipeObstacle(gapY, gapHeight) {
+      const root = new THREE.Group();
+      const topBottomY = gapY + gapHeight * 0.5;
+      const botTopY = gapY - gapHeight * 0.5;
+      const pipeHeight = 18;
+
+      // Tubería superior
+      const topPipe = new THREE.Group();
+      const topBody = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, pipeHeight, 10), MATS.pipeBody);
+      topBody.position.y = topBottomY + pipeHeight * 0.5 + 0.35;
+      topBody.castShadow = true;
+      topBody.receiveShadow = true;
+
+      const topCap = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.25, 0.7, 10), MATS.pipeRim);
+      topCap.position.y = topBottomY + 0.35;
+      topCap.castShadow = true;
+      topPipe.add(topBody, topCap);
+
+      // Tubería inferior
+      const botPipe = new THREE.Group();
+      const botBody = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, pipeHeight, 10), MATS.pipeBody);
+      botBody.position.y = botTopY - pipeHeight * 0.5 - 0.35;
+      botBody.castShadow = true;
+      botBody.receiveShadow = true;
+
+      const botCap = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.25, 0.7, 10), MATS.pipeRim);
+      botCap.position.y = botTopY - 0.35;
+      botCap.castShadow = true;
+      botPipe.add(botBody, botCap);
+
+      root.add(topPipe, botPipe);
+      return { root, halfWidth: 1.15 };
+    }
+
+    function buildTowerObstacle(gapY, gapHeight) {
+      const root = new THREE.Group();
+      const topBottomY = gapY + gapHeight * 0.5;
+      const botTopY = gapY - gapHeight * 0.5;
+      const h = 18;
+
+      // Rascacielos inferior
+      const botTower = new THREE.Mesh(new THREE.BoxGeometry(2.2, h, 2.2), MATS.towerWall);
+      botTower.position.y = botTopY - h * 0.5;
+      botTower.castShadow = true;
+      botTower.receiveShadow = true;
+      root.add(botTower);
+
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.4, 2.4), MATS.towerRoof);
+      roof.position.y = botTopY - 0.2;
+      root.add(roof);
+
+      // Ventanas iluminadas frontales
+      for (let row = 1; row <= 5; row++) {
+        for (let col = -1; col <= 1; col += 2) {
+          const win = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.52), MATS.windowGlow);
+          win.position.set(col * 0.45, botTopY - row * 1.4, 1.12);
+          root.add(win);
+        }
+      }
+
+      // Torre suspendida / Dirigible industrial superior
+      const topTower = new THREE.Mesh(new THREE.BoxGeometry(2.1, h, 2.1), MATS.towerRoof);
+      topTower.position.y = topBottomY + h * 0.5;
+      topTower.castShadow = true;
+      root.add(topTower);
+
+      const topTrim = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.45, 2.35), MATS.zeppBody);
+      topTrim.position.y = topBottomY + 0.22;
+      root.add(topTrim);
+
+      return { root, halfWidth: 1.15 };
+    }
+
+    function buildRingObstacle(gapY, gapHeight) {
+      const root = new THREE.Group();
+      // El anillo tiene radio igual a la mitad del hueco para que el avión pase por dentro
+      const ringRadius = gapHeight * 0.52;
+      const tubeRadius = 0.42;
+
+      const torusGeo = new THREE.TorusGeometry(ringRadius, tubeRadius, 8, 18);
+      // Giramos en Y 90 grados para que el aro quede perpendicular al avance del avión
+      torusGeo.rotateY(Math.PI / 2);
+      const ringMesh = new THREE.Mesh(torusGeo, MATS.ringGold);
+      ringMesh.position.y = gapY;
+      ringMesh.castShadow = true;
+      root.add(ringMesh);
+
+      // Pilares de sujeción arriba y abajo del aro
+      const pylonH = 16;
+      const topPylon = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, pylonH, 8), MATS.ringPylon);
+      topPylon.position.y = gapY + ringRadius + tubeRadius + pylonH * 0.5;
+      root.add(topPylon);
+
+      const botPylon = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, pylonH, 8), MATS.ringPylon);
+      botPylon.position.y = gapY - ringRadius - tubeRadius - pylonH * 0.5;
+      root.add(botPylon);
+
+      return { root, ringMesh, halfWidth: 0.75 };
+    }
+
+    function buildStormObstacle(gapY, gapHeight) {
+      const root = new THREE.Group();
+      const topBottomY = gapY + gapHeight * 0.5;
+      const botTopY = gapY - gapHeight * 0.5;
+
+      // Abajo: aguja de roca afilada
+      const spireH = 18;
+      const botSpire = new THREE.Mesh(new THREE.ConeGeometry(1.85, spireH, 6), MATS.rockSpire);
+      botSpire.position.y = botTopY - spireH * 0.5 + 0.6;
+      botSpire.castShadow = true;
+      root.add(botSpire);
+
+      // Arriba: nube de tormenta oscura con rayos y columna de granizo superior
+      const topRock = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.1, 16, 6), MATS.stormCloud);
+      topRock.position.y = topBottomY + 8 + 1.2;
+      root.add(topRock);
+
+      const stormCluster = new THREE.Group();
+      stormCluster.position.y = topBottomY + 1.1;
+      for (let i = -1; i <= 1; i++) {
+        const puff = new THREE.Mesh(new THREE.DodecahedronGeometry(1.25, 0), MATS.stormCloud);
+        puff.position.set(i * 0.65, Math.abs(i) * 0.25, (i % 2) * 0.3);
+        stormCluster.add(puff);
+      }
+
+      // Rayo amarillo en el borde superior del hueco
+      const bolt = new THREE.Mesh(new THREE.ConeGeometry(0.38, 1.35, 4), MATS.lightning);
+      bolt.rotation.x = Math.PI;
+      bolt.position.y = -0.75;
+      stormCluster.add(bolt);
+
+      root.add(stormCluster);
+      return { root, bolt, halfWidth: 1.1 };
+    }
+
+    function getPhaseForScore(s) {
+      let current = PHASES[0];
+      for (const p of PHASES) {
+        if (s >= p.minScore) current = p;
+      }
+      return current;
+    }
+
+    function spawnObstacle(xPos, currentScore) {
+      const phase = getPhaseForScore(currentScore);
+      const types = phase.types;
+      const chosenType = types[Math.floor(Math.random() * types.length)];
+
+      const gapHeight = phase.gapSize;
+      const minGapY = -3.8;
+      const maxGapY = 4.2;
+      const gapY = THREE.MathUtils.lerp(minGapY, maxGapY, Math.random());
+
+      let built;
+      if (chosenType === 'pipe') {
+        built = buildPipeObstacle(gapY, gapHeight);
+      } else if (chosenType === 'tower') {
+        built = buildTowerObstacle(gapY, gapHeight);
+      } else if (chosenType === 'ring') {
+        built = buildRingObstacle(gapY, gapHeight);
+      } else {
+        built = buildStormObstacle(gapY, gapHeight);
+      }
+
+      built.root.position.set(xPos, 0, 0);
+      obstacleGroup.add(built.root);
+
+      // En fases avanzadas algunos anillos o tormentas oscilan suavemente en vertical
+      const oscillates = (chosenType === 'ring' || chosenType === 'storm') && currentScore >= 15;
+
+      obstacles.push({
+        type: chosenType,
+        mesh: built.root,
+        ringMesh: built.ringMesh || null,
+        boltMesh: built.bolt || null,
+        baseGapY: gapY,
+        gapY: gapY,
+        gapHeight: gapHeight,
+        halfWidth: built.halfWidth,
+        passed: false,
+        oscillates,
+        oscSpeed: 1.5 + Math.random() * 1.1,
+        oscAmp: 0.85 + Math.random() * 0.55,
+        oscPhase: Math.random() * Math.PI * 2
+      });
+    }
+
+    function clearAllObstacles() {
+      for (const obs of obstacles) {
+        obstacleGroup.remove(obs.mesh);
+      }
+      obstacles.length = 0;
+    }
+
+    // =========================================================================
+    // 7. SISTEMA DE PARTÍCULAS (ESTELA DE HUMO, DESTELLOS Y EXPLOSIÓN)
+    // =========================================================================
+    const particles = [];
+    const particleGroup = new THREE.Group();
+    scene.add(particleGroup);
+
+    const smokeGeo = new THREE.DodecahedronGeometry(0.22, 0);
+    const sparkGeo = new THREE.OctahedronGeometry(0.2, 0);
+
+    function spawnSmokeParticle(x, y, z) {
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xf1f5f9,
+        transparent: true,
+        opacity: 0.75
+      });
+      const mesh = new THREE.Mesh(smokeGeo, mat);
+      mesh.position.set(x, y + (Math.random() - 0.5) * 0.15, z + (Math.random() - 0.5) * 0.15);
+      particleGroup.add(mesh);
+
+      particles.push({
+        mesh,
+        vx: -2.8 - Math.random() * 1.5,
+        vy: (Math.random() - 0.5) * 0.8,
+        vz: (Math.random() - 0.5) * 0.8,
+        life: 0.55,
+        maxLife: 0.55,
+        grow: 1.8
+      });
+    }
+
+    function spawnBurst(x, y, z, colors, count = 20) {
+      for (let i = 0; i < count; i++) {
+        const col = colors[i % colors.length];
+        const mat = new THREE.MeshBasicMaterial({
+          color: col,
+          transparent: true,
+          opacity: 1
+        });
+        const mesh = new THREE.Mesh(sparkGeo, mat);
+        mesh.position.set(x, y, z);
+        particleGroup.add(mesh);
+
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2.5 + Math.random() * 7.5;
+        particles.push({
+          mesh,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed + 1.5,
+          vz: (Math.random() - 0.5) * 6,
+          life: 0.75 + Math.random() * 0.35,
+          maxLife: 0.9,
+          grow: -0.5
+        });
+      }
+    }
+
+    function updateParticles(dt, scrollSpeed) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dt;
+        if (p.life <= 0) {
+          particleGroup.remove(p.mesh);
+          p.mesh.material.dispose();
+          particles.splice(i, 1);
+          continue;
+        }
+        p.mesh.position.x += (p.vx - scrollSpeed * 0.35) * dt;
+        p.mesh.position.y += p.vy * dt;
+        p.mesh.position.z += p.vz * dt;
+        p.mesh.rotation.x += 4 * dt;
+        p.mesh.rotation.y += 4 * dt;
+
+        const ratio = Math.max(0, p.life / p.maxLife);
+        p.mesh.material.opacity = ratio;
+        const s = Math.max(0.1, 1 + (1 - ratio) * p.grow);
+        p.mesh.scale.setScalar(s);
+      }
+    }
+
+    // =========================================================================
+    // 8. ESTADO DEL JUEGO Y ELEMENTOS DEL DOM
+    // =========================================================================
+    const STATE = {
+      MENU: 'MENU',
+      PLAYING: 'PLAYING',
+      PAUSED: 'PAUSED',
+      GAMEOVER: 'GAMEOVER'
+    };
+
+    let gameState = STATE.MENU;
+    let score = 0;
+    let bestScore = parseInt(localStorage.getItem(STORAGE_BEST_KEY) || '0', 10);
+    let currentPhaseId = 1;
+
+    let planeY = 0.5;
+    let planeVelY = 0;
+    let scrollSpeed = CONFIG.baseSpeed;
+    let distSinceLastSpawn = 0;
+    let smokeTimer = 0;
+    let elapsedTime = 0;
+
+    // Referencias DOM
+    const scoreDisplay = document.getElementById('score-display');
+    const hudBest = document.getElementById('hud-best');
+    const phaseNameEl = document.getElementById('phase-name');
+    const phaseDotEl = document.getElementById('phase-dot');
+    const tapHintEl = document.getElementById('tap-hint');
+    const phaseBannerEl = document.getElementById('phase-banner');
+    const bannerSubEl = document.getElementById('banner-sub');
+    const bannerTitleEl = document.getElementById('banner-title');
+
+    const startScreen = document.getElementById('start-screen');
+    const pauseScreen = document.getElementById('pause-screen');
+    const gameoverScreen = document.getElementById('gameover-screen');
+
+    const btnStart = document.getElementById('btn-start');
+    const btnResume = document.getElementById('btn-resume');
+    const btnRestartPause = document.getElementById('btn-restart-pause');
+    const btnRetry = document.getElementById('btn-retry');
+    const btnPause = document.getElementById('btn-pause');
+    const btnSound = document.getElementById('btn-sound');
+
+    const goScoreEl = document.getElementById('go-score');
+    const goBestEl = document.getElementById('go-best');
+    const goPhaseReachedEl = document.getElementById('go-phase-reached');
+    const goMedalIconEl = document.getElementById('go-medal-icon');
+    const goMedalTextEl = document.getElementById('go-medal-text');
+
+    hudBest.textContent = bestScore;
+    btnSound.textContent = sound.muted ? '🔇' : '🔊';
+
+    let bannerTimeout = null;
+    function showPhaseBanner(phase) {
+      bannerSubEl.textContent = phase.bannerSub;
+      bannerTitleEl.textContent = phase.bannerTitle;
+      phaseBannerEl.classList.add('visible');
+      if (bannerTimeout) clearTimeout(bannerTimeout);
+      bannerTimeout = setTimeout(() => {
+        phaseBannerEl.classList.remove('visible');
+      }, 2600);
+    }
+
+    function applyPhaseVisuals(phase, announce = false) {
+      phaseNameEl.textContent = phase.name;
+      phaseDotEl.style.background = phase.dotColor;
+      phaseDotEl.style.boxShadow = `0 0 8px ${phase.dotColor}`;
+      targetSkyColor.setHex(phase.skyHex);
+      targetFogColor.setHex(phase.fogHex);
+      dirLight.color.setHex(phase.lightColor);
+
+      if (announce) {
+        sound.playPhaseUp();
+        showPhaseBanner(phase);
+      }
+    }
+
+    function startNewGame() {
+      sound.playClick();
+      clearAllObstacles();
+
+      score = 0;
+      currentPhaseId = 1;
+      planeY = 1.0;
+      planeVelY = 0;
+      scrollSpeed = CONFIG.baseSpeed;
+      distSinceLastSpawn = 0;
+
+      plane.position.set(planeAnchorX, planeY, 0);
+      plane.rotation.set(0, 0, 0);
+
+      scoreDisplay.textContent = '0';
+      applyPhaseVisuals(PHASES[0], false);
+
+      // Generamos los primeros obstáculos con margen inicial
+      spawnObstacle(12, 0);
+      spawnObstacle(12 + CONFIG.spawnIntervalDist, 0);
+
+      startScreen.classList.add('hidden');
+      pauseScreen.classList.add('hidden');
+      gameoverScreen.classList.add('hidden');
+      tapHintEl.classList.remove('fade-out');
+
+      gameState = STATE.PLAYING;
+      doFlap();
+    }
+
+    function doFlap() {
+      if (gameState !== STATE.PLAYING) return;
+      planeVelY = CONFIG.jumpImpulse;
+      sound.playFlap();
+      spawnSmokeParticle(plane.position.x - 1.2, plane.position.y - 0.1, 0);
+      if (score >= 1) {
+        tapHintEl.classList.add('fade-out');
+      }
+    }
+
+    function togglePause() {
+      if (gameState === STATE.PLAYING) {
+        gameState = STATE.PAUSED;
+        pauseScreen.classList.remove('hidden');
+        sound.playClick();
+      } else if (gameState === STATE.PAUSED) {
+        gameState = STATE.PLAYING;
+        pauseScreen.classList.add('hidden');
+        sound.playClick();
+      }
+    }
+
+    function getMedalInfo(pts) {
+      if (pts >= 30) return { icon: '💎', text: 'Rango: Leyenda Suprema del Aire' };
+      if (pts >= 20) return { icon: '🥇', text: 'Rango: Comandante de Oro' };
+      if (pts >= 10) return { icon: '🥈', text: 'Rango: Capitán de Plata' };
+      if (pts >= 4) return { icon: '🥉', text: 'Rango: Aviador de Bronce' };
+      return { icon: '🛩️', text: 'Rango: Cadete de Vuelo' };
+    }
+
+    function triggerGameOver() {
+      if (gameState === STATE.GAMEOVER) return;
+      gameState = STATE.GAMEOVER;
+      sound.playCrash();
+      screenShakeTime = 0.42;
+
+      spawnBurst(plane.position.x, plane.position.y, 0, [0xff5733, 0xfacc15, 0xffffff, 0xef4444], 28);
+
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem(STORAGE_BEST_KEY, String(bestScore));
+        hudBest.textContent = bestScore;
+      }
+
+      const phase = getPhaseForScore(score);
+      goPhaseReachedEl.textContent = `${phase.name} ALCANZADA`;
+      goScoreEl.textContent = score;
+      goBestEl.textContent = bestScore;
+
+      const medal = getMedalInfo(score);
+      goMedalIconEl.textContent = medal.icon;
+      goMedalTextEl.textContent = medal.text;
+
+      setTimeout(() => {
+        if (gameState === STATE.GAMEOVER) {
+          gameoverScreen.classList.remove('hidden');
+        }
+      }, 420);
+    }
+
+    // =========================================================================
+    // 9. EVENTOS DE ENTRADA (TÁCTIL MÓVIL, RATÓN Y TECLADO)
+    // =========================================================================
+    window.addEventListener('pointerdown', (e) => {
+      // Ignorar toques sobre botones o modales
+      if (e.target.closest('button') || e.target.closest('.modal-card')) return;
+      if (gameState === STATE.PLAYING) {
+        doFlap();
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        if (gameState === STATE.PLAYING) {
+          doFlap();
+        } else if (gameState === STATE.MENU) {
+          startNewGame();
+        } else if (gameState === STATE.GAMEOVER && !gameoverScreen.classList.contains('hidden')) {
+          startNewGame();
+        }
+      } else if (e.code === 'KeyP' || e.code === 'Escape') {
+        togglePause();
+      } else if (e.code === 'KeyR') {
+        if (gameState === STATE.PLAYING || gameState === STATE.PAUSED || gameState === STATE.GAMEOVER) {
+          startNewGame();
+        }
+      }
+    });
+
+    btnStart.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startNewGame();
+    });
+
+    btnResume.addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePause();
+    });
+
+    btnRestartPause.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startNewGame();
+    });
+
+    btnRetry.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startNewGame();
+    });
+
+    btnPause.addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePause();
+    });
+
+    btnSound.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const muted = sound.toggleMute();
+      btnSound.textContent = muted ? '🔇' : '🔊';
+    });
+
+    // =========================================================================
+    // 10. BUCLE PRINCIPAL DE SIMULACIÓN Y RENDERIZADO
+    // =========================================================================
+    updateCameraResponsive();
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const rawDt = clock.getDelta();
+      const dt = Math.min(rawDt, 0.05);
+      elapsedTime += dt;
+
+      // Transición suave de colores de cielo y niebla según la fase
+      currentSkyColor.lerp(targetSkyColor, dt * 2.2);
+      currentFogColor.lerp(targetFogColor, dt * 2.2);
+
+      // Giro constante de la hélice
+      propeller.rotation.x += (gameState === STATE.GAMEOVER ? 8 : 34) * dt;
+
+      // Movimiento del entorno (activo en menú y jugando)
+      const activeEnvScroll = gameState === STATE.PAUSED ? 0 : (gameState === STATE.PLAYING ? scrollSpeed : 4.5);
+
+      if (activeEnvScroll > 0) {
+        // Suelo infinito
+        for (const chunk of groundChunks) {
+          chunk.position.x -= activeEnvScroll * dt;
+          if (chunk.position.x < -groundChunkWidth * 3.5) {
+            chunk.position.x += groundChunkWidth * groundChunks.length;
+          }
+        }
+
+        // Montañas Parallax
+        for (const m of mountains) {
+          m.position.x -= activeEnvScroll * m.userData.speedFactor * dt;
+          if (m.position.x < -55) {
+            m.position.x += 135;
+          }
+        }
+
+        // Nubes
+        for (const c of clouds) {
+          c.position.x -= activeEnvScroll * c.userData.speedFactor * dt;
+          if (c.position.x < -45) {
+            c.position.x = 48 + Math.random() * 10;
+            c.position.y = 1.5 + Math.random() * 9;
+          }
+        }
+      }
+
+      // Comportamiento según estado del juego
+      if (gameState === STATE.MENU) {
+        // Vuelo automático suave de exhibición en menú
+        planeY = 0.8 + Math.sin(elapsedTime * 2.6) * 0.85;
+        plane.position.set(planeAnchorX, planeY, 0);
+        plane.rotation.z = Math.cos(elapsedTime * 2.6) * 0.16;
+        plane.rotation.x = Math.sin(elapsedTime * 1.8) * 0.08;
+
+        smokeTimer += dt;
+        if (smokeTimer > 0.11) {
+          smokeTimer = 0;
+          spawnSmokeParticle(plane.position.x - 1.25, plane.position.y - 0.08, 0);
+        }
+      } else if (gameState === STATE.PLAYING) {
+        // Física vertical del avión
+        planeVelY += CONFIG.gravity * dt;
+        planeVelY = THREE.MathUtils.clamp(planeVelY, CONFIG.maxFallSpeed, CONFIG.maxRiseSpeed);
+        planeY += planeVelY * dt;
+
+        // Límite superior (techo)
+        if (planeY + CONFIG.planeRadius > CONFIG.ceilingY) {
+          planeY = CONFIG.ceilingY - CONFIG.planeRadius;
+          planeVelY = Math.min(0, planeVelY);
+        }
+
+        plane.position.set(planeAnchorX, planeY, 0);
+
+        // Inclinación dinámica (Pitch y alabeo sutil)
+        const targetPitch = THREE.MathUtils.clamp(planeVelY * 0.065, -0.75, 0.58);
+        plane.rotation.z = THREE.MathUtils.lerp(plane.rotation.z, targetPitch, dt * 12);
+        plane.rotation.x = Math.sin(elapsedTime * 5) * 0.05;
+
+        // Estela de humo
+        smokeTimer += dt;
+        if (smokeTimer > 0.065) {
+          smokeTimer = 0;
+          spawnSmokeParticle(plane.position.x - 1.25, plane.position.y - 0.1, 0);
+        }
+
+        // Colisión contra el suelo
+        if (planeY - CONFIG.planeRadius <= CONFIG.floorY) {
+          planeY = CONFIG.floorY + CONFIG.planeRadius;
+          plane.position.y = planeY;
+          triggerGameOver();
+        }
+
+        // Avance y generación de obstáculos
+        distSinceLastSpawn += scrollSpeed * dt;
+        if (distSinceLastSpawn >= CONFIG.spawnIntervalDist) {
+          distSinceLastSpawn = 0;
+          spawnObstacle(CONFIG.obstacleSpawnX, score);
+        }
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+          const obs = obstacles[i];
+          obs.mesh.position.x -= scrollSpeed * dt;
+
+          // Oscilación vertical en fases avanzadas
+          if (obs.oscillates) {
+            const offset = Math.sin(elapsedTime * obs.oscSpeed + obs.oscPhase) * obs.oscAmp;
+            obs.mesh.position.y = offset;
+            obs.gapY = obs.baseGapY + offset;
+          }
+
+          // Animación especial en anillos o rayos
+          if (obs.ringMesh) {
+            obs.ringMesh.rotation.x += 1.4 * dt;
+          }
+          if (obs.boltMesh) {
+            obs.boltMesh.scale.y = 0.85 + Math.sin(elapsedTime * 18) * 0.25;
+          }
+
+          // Comprobación de colisión AABB/Círculo contra el hueco seguro
+          const dx = Math.abs(plane.position.x - obs.mesh.position.x);
+          if (dx < obs.halfWidth + CONFIG.planeRadius * 0.85) {
+            const topLimit = obs.gapY + obs.gapHeight * 0.5;
+            const botLimit = obs.gapY - obs.gapHeight * 0.5;
+
+            if (planeY + CONFIG.planeRadius * 0.82 > topLimit || planeY - CONFIG.planeRadius * 0.82 < botLimit) {
+              triggerGameOver();
+              break;
+            }
+          }
+
+          // Puntuación al superar el obstáculo
+          if (!obs.passed && obs.mesh.position.x < plane.position.x - obs.halfWidth) {
+            obs.passed = true;
+            score++;
+            scoreDisplay.textContent = score;
+            scoreDisplay.classList.add('pop');
+            setTimeout(() => scoreDisplay.classList.remove('pop'), 140);
+
+            const isRing = obs.type === 'ring';
+            sound.playScore(isRing);
+            if (isRing) {
+              spawnBurst(obs.mesh.position.x, obs.gapY, 0, [0xfacc15, 0x38bdf8, 0xffffff], 14);
+            }
+
+            // Escalado progresivo de velocidad
+            scrollSpeed = Math.min(CONFIG.maxSpeed, CONFIG.baseSpeed + score * 0.14);
+
+            // Comprobar si hemos desbloqueado una nueva fase
+            const newPhase = getPhaseForScore(score);
+            if (newPhase.id !== currentPhaseId) {
+              currentPhaseId = newPhase.id;
+              applyPhaseVisuals(newPhase, true);
+            }
+          }
+
+          // Reciclaje al salir por la izquierda
+          if (obs.mesh.position.x < CONFIG.obstacleDespawnX) {
+            obstacleGroup.remove(obs.mesh);
+            obstacles.splice(i, 1);
+          }
+        }
+      } else if (gameState === STATE.GAMEOVER) {
+        // Caída dramática tras chocar
+        if (planeY - CONFIG.planeRadius > CONFIG.floorY) {
+          planeVelY += CONFIG.gravity * dt;
+          planeY += planeVelY * dt;
+          plane.position.y = Math.max(CONFIG.floorY + CONFIG.planeRadius, planeY);
+          plane.rotation.z -= 5.5 * dt;
+          plane.rotation.x += 7.0 * dt;
+        }
+      }
+
+      if (gameState !== STATE.PAUSED) {
+        updateParticles(dt, activeEnvScroll);
+      }
+
+      // Sacudida de cámara (Screen Shake) al impactar
+      if (screenShakeTime > 0) {
+        screenShakeTime -= dt;
+        const intensity = screenShakeTime * 1.4;
+        camera.position.set(
+          cameraBasePos.x + (Math.random() - 0.5) * intensity,
+          cameraBasePos.y + (Math.random() - 0.5) * intensity,
+          cameraBasePos.z
+        );
+      } else {
+        // Seguimiento vertical suave de la cámara al avión
+        const targetCamY = cameraBasePos.y + planeY * 0.12;
+        camera.position.x = THREE.MathUtils.lerp(camera.position.x, cameraBasePos.x, dt * 6);
+        camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetCamY, dt * 6);
+        camera.position.z = THREE.MathUtils.lerp(camera.position.z, cameraBasePos.z, dt * 6);
+      }
+      camera.lookAt(cameraLookTarget);
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
