@@ -369,19 +369,4 @@ html, body {
   font-weight: 600;
 }
 
-/* Indicador inferior de toque en partida */
-.tap-hint-bottom {
-  text-align: center;
-  color: #ffffff;
-  font-weight: 900;
-  font-size: 0.95rem;
-  text-shadow:
-    0 2px 0 #1e293b,
-    0 4px 10px rgba(0, 0, 0, 0.55);
-  letter-spacing: 0.05em;
-  transition: opacity 0.4s ease;
-}
 
-.tap-hint-bottom.fade-out {
-  opacity: 0;
-}

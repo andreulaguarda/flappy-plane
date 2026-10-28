@@ -1,0 +1,2 @@
+- Las montañas tienen que llegar hasta el fondo de la pantalla, ahora a veces hay azul (del fondo) entre la base de la montaña y el suelo.
+- 

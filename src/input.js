@@ -3,9 +3,7 @@ import { STATE } from './config.js';
 export function bindInput(game) {
   function onPointerDown(event) {
     if (event.target.closest('button') || event.target.closest('.modal-card')) return;
-    if (game.state === STATE.READY) {
-      game.beginTakeoff();
-    } else if (game.state === STATE.PLAYING) {
+    if (game.state === STATE.PLAYING) {
       game.flap();
     }
   }

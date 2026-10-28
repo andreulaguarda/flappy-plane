@@ -2,7 +2,6 @@ export const STORAGE_BEST_KEY = 'flapy_plane_best_score_v1';
 export const STORAGE_MUTE_KEY = 'flapy_plane_mute_v1';
 
 export const STATE = {
-  READY: 'READY',
   TAKEOFF: 'TAKEOFF',
   PLAYING: 'PLAYING',
   PAUSED: 'PAUSED',

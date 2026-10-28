@@ -12,7 +12,6 @@ export class UI {
     this.hudBest = document.getElementById('hud-best');
     this.phaseNameEl = document.getElementById('phase-name');
     this.phaseDotEl = document.getElementById('phase-dot');
-    this.tapHintEl = document.getElementById('tap-hint');
     this.phaseBannerEl = document.getElementById('phase-banner');
     this.bannerSubEl = document.getElementById('banner-sub');
     this.bannerTitleEl = document.getElementById('banner-title');
@@ -77,18 +76,6 @@ export class UI {
     this.bannerTimeout = setTimeout(() => {
       this.phaseBannerEl.classList.remove('visible');
     }, 2600);
-  }
-
-  setTapHintText(text) {
-    this.tapHintEl.textContent = text;
-  }
-
-  showTapHint() {
-    this.tapHintEl.classList.remove('fade-out');
-  }
-
-  fadeTapHint() {
-    this.tapHintEl.classList.add('fade-out');
   }
 
   showPause() {

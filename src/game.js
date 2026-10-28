@@ -22,7 +22,7 @@ export class Game {
     this.ui = ui;
     this.sound = sound;
 
-    this.state = STATE.READY;
+    this.state = STATE.TAKEOFF;
     this.score = 0;
     this.bestScore = parseInt(localStorage.getItem(STORAGE_BEST_KEY) || '0', 10);
     this.currentPhaseId = 1;
@@ -96,20 +96,15 @@ export class Game {
     this.ui.setScore(0);
     this.ui.hidePause();
     this.ui.hideGameOver();
-    this.ui.setTapHintText('TOCA LA PANTALLA PARA DESPEGAR');
-    this.ui.showTapHint();
     this.applyPhase(PHASES[0], false);
 
-    this.state = STATE.READY;
+    this.beginTakeoff();
   }
 
   beginTakeoff() {
-    if (this.state !== STATE.READY) return;
     this.state = STATE.TAKEOFF;
     this.takeoffTimer = 0;
     this.sound.playFlap();
-    this.ui.setTapHintText('TOCA LA PANTALLA PARA ELEVARTE');
-    this.ui.showTapHint();
   }
 
   flap() {
@@ -117,9 +112,6 @@ export class Game {
     this.planeVelY = CONFIG.jumpImpulse;
     this.sound.playFlap();
     this.particles.spawnSmoke(this.plane.position.x - 1.2, this.plane.position.y - 0.1, 0);
-    if (this.score >= 1) {
-      this.ui.fadeTapHint();
-    }
   }
 
   togglePause() {
@@ -192,14 +184,14 @@ export class Game {
     if (this.state === STATE.PLAYING) {
       this.propeller.rotation.x += 36 * dt;
     } else if (this.state === STATE.TAKEOFF) {
-      const pSpeed = 12 + 26 * Math.min(1, this.takeoffTimer / 1.3);
+      const pSpeed = 12 + 26 * Math.min(1, this.takeoffTimer / 1.0);
       this.propeller.rotation.x += pSpeed * dt;
     } else if (this.state === STATE.GAMEOVER) {
       this.propeller.rotation.x += 8 * dt;
     }
 
     let activeScroll;
-    if (this.state === STATE.PAUSED || this.state === STATE.READY) {
+    if (this.state === STATE.PAUSED) {
       activeScroll = 0;
     } else if (this.state === STATE.PLAYING || this.state === STATE.TAKEOFF) {
       activeScroll = this.scrollSpeed;
@@ -210,9 +202,7 @@ export class Game {
 
     this.environment.update(dt, activeScroll);
 
-    if (this.state === STATE.READY) {
-      this.updateReady();
-    } else if (this.state === STATE.TAKEOFF) {
+    if (this.state === STATE.TAKEOFF) {
       this.updateTakeoff(dt);
     } else if (this.state === STATE.PLAYING) {
       this.updatePlaying(dt);
@@ -228,14 +218,8 @@ export class Game {
     this.world.renderer.render(this.world.scene, this.world.camera);
   }
 
-  updateReady() {
-    this.planeY = this.runwayPlaneY;
-    this.plane.position.set(this.world.planeAnchorX, this.planeY, 0);
-    this.plane.rotation.set(0, 0, 0.06);
-  }
-
   updateTakeoff(dt) {
-    const duration = 2.6;
+    const duration = 2.1;
     this.takeoffTimer += dt;
     const t = Math.min(1, this.takeoffTimer / duration);
 
