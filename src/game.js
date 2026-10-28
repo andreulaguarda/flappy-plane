@@ -34,6 +34,10 @@ export class Game {
     this.distSinceLastSpawn = 0;
     this.smokeTimer = 0;
     this.takeoffTimer = 0;
+    this.crashStopDuration = 0.7;
+    this.crashStartSpeed = 0;
+    this.crashScrollSpeed = 0;
+    this.crashStopTimer = 0;
     this.elapsedTime = 0;
     this.clock = new THREE.Clock();
 
@@ -80,6 +84,9 @@ export class Game {
     this.distSinceLastSpawn = 0;
     this.smokeTimer = 0;
     this.takeoffTimer = 0;
+    this.crashStartSpeed = 0;
+    this.crashScrollSpeed = 0;
+    this.crashStopTimer = 0;
 
     this.environment.resetRunway(this.world.planeAnchorX);
     this.plane.position.set(this.world.planeAnchorX, this.planeY, 0);
@@ -146,6 +153,11 @@ export class Game {
     if (this.state === STATE.GAMEOVER) return;
     this.state = STATE.GAMEOVER;
 
+    // El mundo entero se frena junto con el avión (suelo, árboles, montañas, nubes y obstáculos)
+    this.crashStartSpeed = this.scrollSpeed;
+    this.crashScrollSpeed = this.scrollSpeed;
+    this.crashStopTimer = 0;
+
     this.sound.playCrash();
     this.world.shake(0.42);
     this.particles.spawnBurst(
@@ -180,18 +192,21 @@ export class Game {
     if (this.state === STATE.PLAYING) {
       this.propeller.rotation.x += 36 * dt;
     } else if (this.state === STATE.TAKEOFF) {
-      const pSpeed = 12 + 26 * Math.min(1, this.takeoffTimer / 0.95);
+      const pSpeed = 12 + 26 * Math.min(1, this.takeoffTimer / 1.3);
       this.propeller.rotation.x += pSpeed * dt;
     } else if (this.state === STATE.GAMEOVER) {
       this.propeller.rotation.x += 8 * dt;
     }
 
-    const activeScroll =
-      this.state === STATE.PAUSED || this.state === STATE.READY
-        ? 0
-        : this.state === STATE.PLAYING || this.state === STATE.TAKEOFF
-          ? this.scrollSpeed
-          : 3.5;
+    let activeScroll;
+    if (this.state === STATE.PAUSED || this.state === STATE.READY) {
+      activeScroll = 0;
+    } else if (this.state === STATE.PLAYING || this.state === STATE.TAKEOFF) {
+      activeScroll = this.scrollSpeed;
+    } else {
+      // GAMEOVER: scroll residual que decae en updateGameOver hasta congelar el mundo
+      activeScroll = this.crashScrollSpeed;
+    }
 
     this.environment.update(dt, activeScroll);
 
@@ -220,30 +235,45 @@ export class Game {
   }
 
   updateTakeoff(dt) {
-    const duration = 0.95;
+    const duration = 2.6;
     this.takeoffTimer += dt;
     const t = Math.min(1, this.takeoffTimer / duration);
-    const smoothT = t * t * (3 - 2 * t);
 
-    this.scrollSpeed = CONFIG.baseSpeed * smoothT;
+    // Aceleración progresiva por la pista
+    this.scrollSpeed = CONFIG.baseSpeed * (t * t * (3 - 2 * t));
 
-    const liftT = Math.max(0, (t - 0.25) / 0.75);
+    // Fases: carrera en tierra (0-0.55), rotación del morro (0.42-0.62), ascenso (0.58-1)
+    const rollT = Math.min(1, t / 0.55);
+    const rotT = THREE.MathUtils.clamp((t - 0.42) / 0.2, 0, 1);
+    const rotSmooth = rotT * rotT * (3 - 2 * rotT);
+    const liftT = Math.max(0, (t - 0.58) / 0.42);
     const liftSmooth = liftT * liftT * (3 - 2 * liftT);
 
     this.planeY = THREE.MathUtils.lerp(this.runwayPlaneY, 0.8, liftSmooth);
-    this.plane.position.set(this.world.planeAnchorX, this.planeY, 0);
-    this.plane.rotation.z = THREE.MathUtils.lerp(0.06, 0.36, Math.sin(liftT * Math.PI));
-    this.plane.rotation.x = Math.sin(this.elapsedTime * 9) * 0.04;
 
+    // Vibración de la carrera en tierra, se desvanece al ganar altura
+    const groundRumble = (1 - liftSmooth) * rollT;
+    const rumble = Math.sin(this.elapsedTime * 47) * 0.022 * groundRumble;
+    this.plane.position.set(this.world.planeAnchorX, this.planeY + rumble, 0);
+
+    // Morro: estable en carrera, se levanta en la rotación y se asienta al ascender
+    const noseUp = THREE.MathUtils.lerp(0.06, 0.32, rotSmooth);
+    this.plane.rotation.z = THREE.MathUtils.lerp(noseUp, 0.24, liftSmooth);
+    this.plane.rotation.x = Math.sin(this.elapsedTime * 9) * 0.04 * (0.3 + groundRumble);
+
+    // Humo: de las ruedas durante la carrera, del escape una vez en el aire
     this.smokeTimer += dt;
-    if (this.smokeTimer > 0.055) {
+    const smokeInterval = liftT > 0 ? 0.055 : 0.09 - 0.04 * rollT;
+    if (this.smokeTimer > smokeInterval) {
       this.smokeTimer = 0;
-      this.particles.spawnSmoke(this.plane.position.x - 1.25, this.plane.position.y - 0.1, 0);
+      const smokeY = liftT > 0 ? this.planeY - 0.1 : this.runwayPlaneY - 0.72;
+      this.particles.spawnSmoke(this.plane.position.x - 1.25, smokeY, 0);
     }
 
     if (t >= 1) {
       this.scrollSpeed = CONFIG.baseSpeed;
-      this.planeVelY = CONFIG.jumpImpulse * 0.72;
+      // Impulso suave, coherente con el final del ascenso (sin salto brusco)
+      this.planeVelY = CONFIG.jumpImpulse * 0.42;
       this.distSinceLastSpawn = 0;
       this.obstacles.spawn(16, 0);
       this.obstacles.spawn(16 + CONFIG.spawnIntervalDist, 0);
@@ -340,6 +370,14 @@ export class Game {
   }
 
   updateGameOver(dt) {
+    // Desaceleración suave del mundo tras el choque (ease-out hasta parar)
+    if (this.crashStopTimer < this.crashStopDuration) {
+      this.crashStopTimer = Math.min(this.crashStopDuration, this.crashStopTimer + dt);
+      const k = 1 - this.crashStopTimer / this.crashStopDuration;
+      this.crashScrollSpeed = this.crashStartSpeed * k * k;
+      this.obstacles.move(dt, this.crashScrollSpeed, this.elapsedTime);
+    }
+
     if (this.planeY - CONFIG.planeRadius > CONFIG.floorY) {
       this.planeVelY += CONFIG.gravity * dt;
       this.planeY += this.planeVelY * dt;
