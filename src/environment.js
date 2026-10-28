@@ -268,6 +268,14 @@ export function createEnvironment(scene) {
     snowCap.position.y = baseHeight + capHeight * 0.5;
     mGroup.add(snowCap);
 
+    // Falda bajo la base: rellena el hueco que dejaba ver el cielo entre la
+    // montaña y la línea del suelo cuando la cámara sube. Queda oculta tras el terreno.
+    const skirtHeight = 14;
+    const skirtGeo = new THREE.CylinderGeometry(baseRadius, baseRadius, skirtHeight, 6);
+    const skirt = new THREE.Mesh(skirtGeo, mMat);
+    skirt.position.y = -skirtHeight * 0.5;
+    mGroup.add(skirt);
+
     return mGroup;
   }
 

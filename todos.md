@@ -1,4 +1,3 @@
-- Las montañas tienen que llegar hasta el fondo de la pantalla, ahora a veces hay azul (del fondo) entre la base de la montaña y el suelo.
 - Vamos a hacer que el juego sea tipo aventura lineal tipo la vuelta al mundo en 80 dias, pero lo haremos en 20 niveles para ir dando la vuelta al mundo. Cada nivel tendra su propia estetica y bioma, aunque se pueden reutilizar elementos, evidentemente. (por ejemplo, el nivel de Egipto con pirámides y tormentas de arena, el de Islandia con hielo y auroras boreales, o el de San Francisco con el puente colgante): 
     Nivel 1: Londres (Salida desde el mítico aeródromo histórico).
 
@@ -39,3 +38,5 @@
     Nivel 19: Dublín (Irlanda) (Praderas verdes y costas atlánticas).
 
     Nivel 20: Londres (¡Meta final! Aterrizaje triunfal en el punto de partida para completar la vuelta al mundo).
+
+Vamos a separar el nivel actual en varios niveles (uno por cada fase actual), a hacerlos un poco más largos y a que tengan principio (despegue) y final (aterrizaje, igual que el despegue pero al revés). Y hacemos un menu inicial donde se elige el nivel, y cuando nos matan en el modal ese que sea "Reintentar" y otro botón "Salir o menu o algo así" que vuelva al menu de elegir nivel
