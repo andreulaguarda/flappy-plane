@@ -133,7 +133,6 @@ export class Game {
 
   applyPhase(phase, announce = false) {
     this.world.setPhase(phase);
-    this.ui.setPhase(phase);
 
     if (announce) {
       this.sound.playPhaseUp();

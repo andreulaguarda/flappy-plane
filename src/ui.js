@@ -10,8 +10,6 @@ export class UI {
   constructor() {
     this.scoreDisplay = document.getElementById('score-display');
     this.hudBest = document.getElementById('hud-best');
-    this.phaseNameEl = document.getElementById('phase-name');
-    this.phaseDotEl = document.getElementById('phase-dot');
     this.phaseBannerEl = document.getElementById('phase-banner');
     this.bannerSubEl = document.getElementById('banner-sub');
     this.bannerTitleEl = document.getElementById('banner-title');
@@ -60,12 +58,6 @@ export class UI {
       this.scoreDisplay.classList.add('pop');
       setTimeout(() => this.scoreDisplay.classList.remove('pop'), 140);
     }
-  }
-
-  setPhase(phase) {
-    this.phaseNameEl.textContent = phase.name;
-    this.phaseDotEl.style.background = phase.dotColor;
-    this.phaseDotEl.style.boxShadow = `0 0 8px ${phase.dotColor}`;
   }
 
   showBanner(phase) {
