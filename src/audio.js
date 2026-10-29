@@ -51,31 +51,6 @@ export class SoundSystem {
     osc.stop(now + 0.12);
   }
 
-  playScore(isRing = false) {
-    if (this.muted) return;
-    this.init();
-    if (!this.ctx) return;
-
-    const now = this.ctx.currentTime;
-    const notes = isRing ? [587.33, 783.99, 1046.5] : [523.25, 659.25];
-
-    notes.forEach((freq, idx) => {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, now + idx * 0.065);
-
-      gain.gain.setValueAtTime(0.16, now + idx * 0.065);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.065 + 0.18);
-
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-
-      osc.start(now + idx * 0.065);
-      osc.stop(now + idx * 0.065 + 0.19);
-    });
-  }
-
   playCoin() {
     if (this.muted) return;
     this.init();

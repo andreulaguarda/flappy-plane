@@ -512,7 +512,6 @@ export class Game {
       if (!obs.passed && passedObstacle(planeX, obs.mesh.position.x, obs.halfWidth)) {
         obs.passed = true;
         this.obstaclesPassed++;
-        this.sound.playScore(obs.type === 'ring');
 
         if (obs.type === 'ring') {
           this.particles.spawnBurst(
