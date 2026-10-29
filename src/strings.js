@@ -8,7 +8,7 @@ const EN = {
   menuBadge: '3D ARCADE',
   menuTitle: 'FLAPPY PLANE',
   menuSubtitle: 'Select a level and take off.',
-  levelBest: 'BEST {score}',
+  levelBest: 'BEST {distance}',
   locked: 'LOCKED',
 
   level1Name: 'PIPE VALLEY',
@@ -29,7 +29,8 @@ const EN = {
   menu: 'MENU',
 
   gameOverTitle: 'CRASH LANDING!',
-  scoreLabel: 'SCORE',
+  distanceLabel: 'DISTANCE',
+  coinsLabel: 'COINS',
   retry: 'RETRY',
 
   completeBadge: 'LEVEL {level} COMPLETE',

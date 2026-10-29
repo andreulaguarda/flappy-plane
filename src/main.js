@@ -2,6 +2,7 @@ import { createWorld } from './scene.js';
 import { createPlane } from './plane.js';
 import { createEnvironment } from './environment.js';
 import { createObstacleSystem } from './obstacles.js';
+import { createCoinSystem } from './coins.js';
 import { createParticleSystem } from './particles.js';
 import { UI } from './ui.js';
 import { sound } from './audio.js';
@@ -18,6 +19,7 @@ world.scene.add(plane);
 
 const environment = createEnvironment(world.scene);
 const obstacles = createObstacleSystem(world.scene);
+const coins = createCoinSystem(world.scene);
 const particles = createParticleSystem(world.scene);
 const ui = new UI();
 
@@ -27,6 +29,7 @@ const game = new Game({
   propeller,
   environment,
   obstacles,
+  coins,
   particles,
   ui,
   sound

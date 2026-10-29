@@ -61,7 +61,51 @@ html, body {
 .hud-stats {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.coin-icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fef9c3 0%, #fde047 38%, #facc15 62%, #b45309 100%);
+  border: 2px solid #fef3c7;
+  box-shadow: 0 1px 0 #92400e, 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+.coin-mini {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 11px 3px 7px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  color: #fef08a;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 2px 0 #1e293b;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+.coin-mini .coin-icon {
+  width: 20px;
+  height: 20px;
+  flex-basis: 20px;
+}
+
+#hud-coins.pop {
+  animation: coin-pop 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes coin-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); color: #ffffff; }
+  100% { transform: scale(1); }
 }
 
 .best-mini {
@@ -70,6 +114,23 @@ html, body {
   font-weight: 800;
   text-shadow: 0 2px 0 #1e293b;
   padding-left: 4px;
+}
+
+.wallet-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 auto 6px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.12);
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  color: #fef08a;
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
 }
 
 .score-center {
@@ -247,6 +308,25 @@ html, body {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin: 18px 0 22px;
+}
+
+.stats-grid.three {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.stats-grid.three .stat-box {
+  padding: 11px 6px;
+}
+
+.stats-grid.three .stat-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+}
+
+.stats-grid.three .stat-value {
+  font-size: 1.35rem;
+  white-space: nowrap;
 }
 
 .stat-box {

@@ -1,7 +1,9 @@
 export const STORAGE_MUTE_KEY = 'flapy_plane_mute_v1';
 export const STORAGE_LEGACY_BEST_KEY = 'flapy_plane_best_score_v1';
-export const STORAGE_BESTS_KEY = 'flapy_plane_bests_v2';
+export const STORAGE_LEGACY_BESTS_KEY = 'flapy_plane_bests_v2';
+export const STORAGE_BESTS_KEY = 'flapy_plane_bests_v3';
 export const STORAGE_PROGRESS_KEY = 'flapy_plane_progress_v1';
+export const STORAGE_COINS_KEY = 'flapy_plane_coins_v1';
 
 export const STATE = {
   MENU: 'MENU',
@@ -21,6 +23,7 @@ export const CONFIG = {
   ceilingY: 8.6,
   floorY: -7.8,
   planeRadius: 0.68,
+  coinRadius: 0.55,
   spawnIntervalDist: 11.2,
   obstacleDespawnX: -24,
   obstacleSpawnX: 28,

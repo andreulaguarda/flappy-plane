@@ -19,3 +19,10 @@ export function hitsCeiling(planeY, radius, ceilingY) {
 export function passedObstacle(planeX, obstacleX, halfWidth) {
   return obstacleX < planeX - halfWidth;
 }
+
+export function hitsCoin(planeX, planeY, planeRadius, coinX, coinY, coinRadius) {
+  const dx = planeX - coinX;
+  const dy = planeY - coinY;
+  const reach = planeRadius * 0.85 + coinRadius;
+  return dx * dx + dy * dy <= reach * reach;
+}

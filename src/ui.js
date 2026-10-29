@@ -1,4 +1,5 @@
 import { t } from './strings.js';
+import { formatDistance, levelDistanceM } from './distance.js';
 
 export function getMedalInfo(points, total) {
   const ratio = total > 0 ? points / total : 0;
@@ -14,6 +15,8 @@ export class UI {
     this.uiLayer = document.getElementById('ui-layer');
     this.scoreDisplay = document.getElementById('score-display');
     this.hudBest = document.getElementById('hud-best');
+    this.hudCoins = document.getElementById('hud-coins');
+    this.menuCoins = document.getElementById('menu-coins');
     this.phaseBannerEl = document.getElementById('phase-banner');
     this.bannerSubEl = document.getElementById('banner-sub');
     this.bannerTitleEl = document.getElementById('banner-title');
@@ -48,16 +51,18 @@ export class UI {
     ];
 
     this.goLevelEl = document.getElementById('go-level');
-    this.goScoreEl = document.getElementById('go-score');
+    this.goDistanceEl = document.getElementById('go-distance');
     this.goBestEl = document.getElementById('go-best');
+    this.goCoinsEl = document.getElementById('go-coins');
     this.goMedalIconEl = document.getElementById('go-medal-icon');
     this.goMedalTextEl = document.getElementById('go-medal-text');
 
     this.completeBadgeEl = document.getElementById('complete-badge');
     this.completeTitleEl = document.getElementById('complete-title');
     this.completeSubtitleEl = document.getElementById('complete-subtitle');
-    this.completeScoreEl = document.getElementById('complete-score');
+    this.completeDistanceEl = document.getElementById('complete-distance');
     this.completeBestEl = document.getElementById('complete-best');
+    this.completeCoinsEl = document.getElementById('complete-coins');
     this.completeMedalIconEl = document.getElementById('complete-medal-icon');
     this.completeMedalTextEl = document.getElementById('complete-medal-text');
 
@@ -91,15 +96,19 @@ export class UI {
     });
   }
 
-  setBest(value) {
-    this.hudBest.textContent = value;
+  setBest(meters) {
+    this.hudBest.textContent = formatDistance(meters);
   }
 
-  setScore(value, pop = false) {
-    this.scoreDisplay.textContent = value;
+  setDistance(meters) {
+    this.scoreDisplay.textContent = formatDistance(meters);
+  }
+
+  setCoins(value, pop = false) {
+    this.hudCoins.textContent = value;
     if (pop) {
-      this.scoreDisplay.classList.add('pop');
-      setTimeout(() => this.scoreDisplay.classList.remove('pop'), 140);
+      this.hudCoins.classList.add('pop');
+      setTimeout(() => this.hudCoins.classList.remove('pop'), 160);
     }
   }
 
@@ -126,13 +135,14 @@ export class UI {
     this.uiLayer.classList.add('ui-hidden');
   }
 
-  showMenu({ levels, progress, bests }) {
+  showMenu({ levels, progress, bests, coins }) {
     this.levelList.innerHTML = '';
+    this.menuCoins.textContent = coins;
 
     for (const level of levels) {
       const unlocked = level.id <= progress.unlocked;
       const best = bests[level.id] || 0;
-      const completed = best >= level.obstacleCount;
+      const completed = best >= levelDistanceM(level);
 
       const card = document.createElement('button');
       card.type = 'button';
@@ -140,7 +150,7 @@ export class UI {
       card.dataset.level = String(level.id);
       card.disabled = !unlocked;
 
-      const meta = unlocked ? t('levelBest', { score: best }) : t('locked');
+      const meta = unlocked ? t('levelBest', { distance: formatDistance(best) }) : t('locked');
       const state = completed ? '✓' : unlocked ? '▶' : '🔒';
 
       card.innerHTML = `
@@ -171,13 +181,14 @@ export class UI {
     this.pauseScreen.classList.add('hidden');
   }
 
-  prepareGameOver({ level, score, best, medal }) {
+  prepareGameOver({ level, distance, best, coins, medal }) {
     this.goLevelEl.textContent = t('levelBadge', {
       level: level.id,
       name: t(level.nameKey)
     });
-    this.goScoreEl.textContent = score;
-    this.goBestEl.textContent = best;
+    this.goDistanceEl.textContent = formatDistance(distance);
+    this.goBestEl.textContent = formatDistance(best);
+    this.goCoinsEl.textContent = `+${coins}`;
     this.goMedalIconEl.textContent = medal.icon;
     this.goMedalTextEl.textContent = medal.text;
 
@@ -192,14 +203,15 @@ export class UI {
     this.gameoverScreen.classList.add('hidden');
   }
 
-  prepareLevelComplete({ level, score, best, medal, hasNext }) {
+  prepareLevelComplete({ level, distance, best, coins, medal, hasNext }) {
     this.completeBadgeEl.textContent = t('completeBadge', { level: level.id });
     this.completeTitleEl.textContent = t(hasNext ? 'completeTitle' : 'allCompleteTitle');
     this.completeSubtitleEl.textContent = t(
       hasNext ? 'completeSubtitle' : 'allCompleteSubtitle'
     );
-    this.completeScoreEl.textContent = score;
-    this.completeBestEl.textContent = best;
+    this.completeDistanceEl.textContent = formatDistance(distance);
+    this.completeBestEl.textContent = formatDistance(best);
+    this.completeCoinsEl.textContent = `+${coins}`;
     this.completeMedalIconEl.textContent = medal.icon;
     this.completeMedalTextEl.textContent = medal.text;
     this.btnNextLevel.style.display = hasNext ? '' : 'none';

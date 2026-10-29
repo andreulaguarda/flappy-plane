@@ -10,33 +10,51 @@ import {
 import { hitsGap, hitsFloor, hitsCeiling, passedObstacle } from './collision.js';
 import { bindInput } from './input.js';
 import { getMedalInfo } from './ui.js';
+import { METERS_PER_WORLD_UNIT } from './distance.js';
 import {
   loadProgress,
   saveProgress,
   loadBests,
   saveBests,
+  loadCoins,
+  saveCoins,
   unlockNextLevel,
   updateBests
 } from './progress.js';
 import { t } from './strings.js';
 
 export class Game {
-  constructor({ world, plane, propeller, environment, obstacles, particles, ui, sound }) {
+  constructor({
+    world,
+    plane,
+    propeller,
+    environment,
+    obstacles,
+    coins,
+    particles,
+    ui,
+    sound
+  }) {
     this.world = world;
     this.plane = plane;
     this.propeller = propeller;
     this.environment = environment;
     this.obstacles = obstacles;
+    this.coins = coins;
     this.particles = particles;
     this.ui = ui;
     this.sound = sound;
 
     this.state = STATE.MENU;
     this.level = LEVELS[0];
-    this.score = 0;
+    this.distanceM = 0;
+    this.obstaclesPassed = 0;
+    this.lastDisplayedMeters = -1;
     this.progress = loadProgress(LEVELS.length);
     this.bests = loadBests();
     this.bestScore = this.bests[this.level.id] || 0;
+    this.wallet = loadCoins();
+    this.runCoins = 0;
 
     this.runwayPlaneY = CONFIG.floorY + 0.88;
     this.planeY = this.runwayPlaneY;
@@ -101,9 +119,13 @@ export class Game {
 
   resetRun() {
     this.obstacles.clear();
+    this.coins.clear();
     this.particles.clear();
 
-    this.score = 0;
+    this.distanceM = 0;
+    this.obstaclesPassed = 0;
+    this.lastDisplayedMeters = -1;
+    this.runCoins = 0;
     this.runwayPlaneY = CONFIG.floorY + 0.88;
     this.planeY = this.runwayPlaneY;
     this.planeVelY = 0;
@@ -135,18 +157,21 @@ export class Game {
     this.bestScore = this.bests[this.level.id] || 0;
 
     this.world.setPhase(this.level);
-    this.ui.setScore(0);
+    this.ui.setDistance(0);
     this.ui.setBest(this.bestScore);
+    this.ui.setCoins(this.wallet);
     this.ui.hideBanner();
     this.ui.hidePause();
     this.ui.hideGameOver();
     this.ui.hideComplete();
     this.ui.hideHud();
     saveBests(this.bests);
+    saveCoins(this.wallet);
     this.ui.showMenu({
       levels: LEVELS,
       progress: this.progress,
-      bests: this.bests
+      bests: this.bests,
+      coins: this.wallet
     });
   }
 
@@ -163,8 +188,9 @@ export class Game {
 
     this.ui.hideMenu();
     this.ui.showHud();
-    this.ui.setScore(0);
+    this.ui.setDistance(0);
     this.ui.setBest(this.bestScore);
+    this.ui.setCoins(this.wallet);
     this.ui.hidePause();
     this.ui.hideGameOver();
     this.ui.hideComplete();
@@ -225,37 +251,39 @@ export class Game {
       28
     );
 
-    if (this.score > this.bestScore) {
-      this.bestScore = this.score;
-      this.bests = updateBests(this.bests, this.level.id, this.score);
-      saveBests(this.bests);
-      this.ui.setBest(this.bestScore);
-    }
+    this.bests = updateBests(this.bests, this.level.id, this.distanceM);
+    this.bestScore = this.bests[this.level.id] || 0;
+    saveBests(this.bests);
+    saveCoins(this.wallet);
+    this.ui.setBest(this.bestScore);
 
     this.ui.prepareGameOver({
       level: this.level,
-      score: this.score,
+      distance: this.distanceM,
       best: this.bestScore,
-      medal: getMedalInfo(this.score, this.level.obstacleCount)
+      coins: this.runCoins,
+      medal: getMedalInfo(this.obstaclesPassed, this.level.obstacleCount)
     });
   }
 
   completeLevel() {
     this.state = STATE.LEVEL_COMPLETE;
 
-    this.bests = updateBests(this.bests, this.level.id, this.score);
-    this.bestScore = this.bests[this.level.id] || this.score;
+    this.bests = updateBests(this.bests, this.level.id, this.distanceM);
+    this.bestScore = this.bests[this.level.id] || 0;
     this.progress = unlockNextLevel(this.progress, this.level.id, LEVELS.length);
     saveBests(this.bests);
     saveProgress(this.progress);
+    saveCoins(this.wallet);
 
     this.ui.setBest(this.bestScore);
     this.sound.playPhaseUp();
     this.ui.prepareLevelComplete({
       level: this.level,
-      score: this.score,
+      distance: this.distanceM,
       best: this.bestScore,
-      medal: getMedalInfo(this.score, this.level.obstacleCount),
+      coins: this.runCoins,
+      medal: getMedalInfo(this.obstaclesPassed, this.level.obstacleCount),
       hasNext: !isLastLevel(this.level.id)
     });
   }
@@ -292,6 +320,16 @@ export class Game {
 
     this.environment.update(dt, activeScroll);
 
+    if (
+      this.state === STATE.TAKEOFF ||
+      this.state === STATE.PLAYING ||
+      this.state === STATE.LANDING ||
+      this.state === STATE.GAMEOVER
+    ) {
+      this.coins.move(dt, activeScroll, this.elapsedTime);
+      this.coins.cleanup();
+    }
+
     if (this.state === STATE.TAKEOFF) {
       this.updateTakeoff(dt);
     } else if (this.state === STATE.PLAYING) {
@@ -302,12 +340,35 @@ export class Game {
       this.updateGameOver(dt);
     }
 
+    if (
+      this.state === STATE.TAKEOFF ||
+      this.state === STATE.PLAYING ||
+      this.state === STATE.LANDING
+    ) {
+      this.addDistance(this.scrollSpeed * dt * METERS_PER_WORLD_UNIT);
+    }
+
     if (this.state !== STATE.PAUSED && this.state !== STATE.MENU) {
       this.particles.update(dt, activeScroll);
     }
 
     this.world.updateCamera(dt, this.planeY);
     this.world.renderer.render(this.world.scene, this.world.camera);
+  }
+
+  addDistance(meters) {
+    this.distanceM += meters;
+    const displayedMeters = Math.floor(this.distanceM);
+    if (displayedMeters === this.lastDisplayedMeters) return;
+
+    this.lastDisplayedMeters = displayedMeters;
+    this.ui.setDistance(this.distanceM);
+
+    if (this.distanceM > this.bestScore) {
+      this.bestScore = this.distanceM;
+      this.bests = updateBests(this.bests, this.level.id, this.bestScore);
+      this.ui.setBest(this.bestScore);
+    }
   }
 
   updateTakeoff(dt) {
@@ -361,8 +422,13 @@ export class Game {
       this.planeVelY = CONFIG.takeoffExitVelY;
       this.distSinceLastSpawn = 0;
       this.obstaclesSpawned = 2;
-      this.obstacles.spawn(16, this.level, this.score);
-      this.obstacles.spawn(16 + CONFIG.spawnIntervalDist, this.level, this.score);
+      const firstObstacle = this.obstacles.spawn(16, this.level, this.obstaclesPassed);
+      const secondObstacle = this.obstacles.spawn(
+        16 + CONFIG.spawnIntervalDist,
+        this.level,
+        this.obstaclesPassed
+      );
+      this.spawnCoinBetween(firstObstacle, secondObstacle);
       this.state = STATE.PLAYING;
     }
   }
@@ -399,7 +465,7 @@ export class Game {
 
       // Tras superar el último obstáculo el tramo final es seguro: no se puede
       // perder el nivel mientras se aproxima la pista de aterrizaje.
-      if (this.score < this.level.obstacleCount) {
+      if (this.obstaclesPassed < this.level.obstacleCount) {
         this.triggerGameOver();
         return;
       }
@@ -412,13 +478,22 @@ export class Game {
       this.distSinceLastSpawn >= CONFIG.spawnIntervalDist
     ) {
       this.distSinceLastSpawn = 0;
-      this.obstacles.spawn(CONFIG.obstacleSpawnX, this.level, this.score);
+      const previousObstacle = this.obstacles.obstacles[this.obstacles.obstacles.length - 1];
+      const newObstacle = this.obstacles.spawn(
+        CONFIG.obstacleSpawnX,
+        this.level,
+        this.obstaclesPassed
+      );
+      if (previousObstacle) {
+        this.spawnCoinBetween(previousObstacle, newObstacle);
+      }
       this.obstaclesSpawned++;
     }
 
     this.obstacles.move(dt, this.scrollSpeed, this.elapsedTime);
 
     const planeX = this.plane.position.x;
+    this.collectCoins();
     for (let i = 0; i < this.obstacles.obstacles.length; i++) {
       const obs = this.obstacles.obstacles[i];
 
@@ -439,8 +514,7 @@ export class Game {
 
       if (!obs.passed && passedObstacle(planeX, obs.mesh.position.x, obs.halfWidth)) {
         obs.passed = true;
-        this.score++;
-        this.ui.setScore(this.score, true);
+        this.obstaclesPassed++;
         this.sound.playScore(obs.type === 'ring');
 
         if (obs.type === 'ring') {
@@ -453,13 +527,7 @@ export class Game {
           );
         }
 
-        if (this.score > this.bestScore) {
-          this.bestScore = this.score;
-          this.bests = updateBests(this.bests, this.level.id, this.score);
-          this.ui.setBest(this.bestScore);
-        }
-
-        this.scrollSpeed = speedForLevel(this.level, this.score);
+        this.scrollSpeed = speedForLevel(this.level, this.obstaclesPassed);
       }
     }
 
@@ -468,13 +536,43 @@ export class Game {
     this.updateLandingApproach(dt);
   }
 
+  spawnCoinBetween(previousObstacle, nextObstacle) {
+    const x = (previousObstacle.mesh.position.x + nextObstacle.mesh.position.x) * 0.5;
+    const y = (previousObstacle.baseGapY + nextObstacle.baseGapY) * 0.5;
+    const clampedY = THREE.MathUtils.clamp(
+      y,
+      CONFIG.floorY + 2.2,
+      CONFIG.ceilingY - 2.2
+    );
+    this.coins.spawn(x, clampedY);
+  }
+
+  collectCoins() {
+    const picked = this.coins.collect(
+      this.plane.position.x,
+      this.planeY,
+      CONFIG.planeRadius
+    );
+    if (picked.length === 0) return;
+
+    this.wallet += picked.length;
+    this.runCoins += picked.length;
+    saveCoins(this.wallet);
+    this.ui.setCoins(this.wallet, true);
+    this.sound.playCoin();
+
+    for (const coin of picked) {
+      this.particles.spawnBurst(coin.x, coin.y, 0, [0xfde047, 0xfbbf24, 0xffffff], 10);
+    }
+  }
+
   updateLandingApproach(dt) {
     if (this.state !== STATE.PLAYING) return;
     const planeX = this.plane.position.x;
 
     // Cuando ya se han superado todos los obstáculos, aparece la pista al fondo
     // y el avión vuela hacia ella antes de iniciar la maniobra de aterrizaje.
-    if (!this.runwaySpawned && this.score >= this.level.obstacleCount) {
+    if (!this.runwaySpawned && this.obstaclesPassed >= this.level.obstacleCount) {
       const lastObstacle = this.obstacles.obstacles[this.obstacles.obstacles.length - 1];
       const obstacleClear = !lastObstacle || lastObstacle.mesh.position.x < planeX - 8;
       if (obstacleClear) {

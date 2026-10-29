@@ -1,8 +1,11 @@
 import {
   STORAGE_BESTS_KEY,
+  STORAGE_COINS_KEY,
+  STORAGE_LEGACY_BESTS_KEY,
   STORAGE_LEGACY_BEST_KEY,
   STORAGE_PROGRESS_KEY
 } from './config.js';
+import { METERS_PER_OBSTACLE } from './distance.js';
 
 export function normalizeProgress(data, maxLevel) {
   const unlocked = Number.isFinite(data?.unlocked) ? Math.floor(data.unlocked) : 1;
@@ -74,10 +77,40 @@ export function loadBests(storage = globalThis.localStorage) {
   const raw = readItem(storage, STORAGE_BESTS_KEY);
   if (raw) return normalizeBests(safeParse(raw, {}));
 
+  // Los récords anteriores guardaban tuberías superadas; ahora se guardan metros.
+  const legacyBests = normalizeBests(
+    safeParse(readItem(storage, STORAGE_LEGACY_BESTS_KEY), null)
+  );
+  if (Object.keys(legacyBests).length > 0) {
+    return convertObstacleBests(legacyBests);
+  }
+
   const legacy = parseInt(readItem(storage, STORAGE_LEGACY_BEST_KEY) || '0', 10);
-  return legacy > 0 ? { 1: legacy } : {};
+  return legacy > 0 ? { 1: legacy * METERS_PER_OBSTACLE } : {};
+}
+
+function convertObstacleBests(bests) {
+  const converted = {};
+  for (const [levelId, obstacles] of Object.entries(bests)) {
+    converted[levelId] = Math.round(obstacles * METERS_PER_OBSTACLE);
+  }
+  return converted;
 }
 
 export function saveBests(bests, storage = globalThis.localStorage) {
   writeItem(storage, STORAGE_BESTS_KEY, JSON.stringify(bests));
+}
+
+export function normalizeCoins(value) {
+  const coins = Number(value);
+  if (!Number.isFinite(coins) || coins <= 0) return 0;
+  return Math.floor(coins);
+}
+
+export function loadCoins(storage = globalThis.localStorage) {
+  return normalizeCoins(readItem(storage, STORAGE_COINS_KEY));
+}
+
+export function saveCoins(coins, storage = globalThis.localStorage) {
+  writeItem(storage, STORAGE_COINS_KEY, String(normalizeCoins(coins)));
 }

@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { hitsGap, hitsFloor, hitsCeiling, passedObstacle } from './collision.js';
+import {
+  hitsGap,
+  hitsFloor,
+  hitsCeiling,
+  passedObstacle,
+  hitsCoin
+} from './collision.js';
 
 describe('hitsGap', () => {
   const radius = 0.5;
@@ -60,5 +66,23 @@ describe('passedObstacle', () => {
 
   it('no lo marca antes de pasarlo', () => {
     expect(passedObstacle(-4.5, 0, 1)).toBe(false);
+  });
+});
+
+describe('hitsCoin', () => {
+  const radius = 0.5;
+  const coinRadius = 0.4;
+
+  it('recoge la moneda al pasar por encima', () => {
+    expect(hitsCoin(0, 0, radius, 0, 0, coinRadius)).toBe(true);
+  });
+
+  it('la recoge cerca del borde con margen generoso', () => {
+    // alcance = 0.5 * 0.85 + 0.4 = 0.825
+    expect(hitsCoin(0.8, 0, radius, 0, 0, coinRadius)).toBe(true);
+  });
+
+  it('no la recoge si está demasiado lejos', () => {
+    expect(hitsCoin(2, 0, radius, 0, 0, coinRadius)).toBe(false);
   });
 });

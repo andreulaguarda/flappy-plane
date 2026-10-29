@@ -7,7 +7,10 @@ import {
   loadProgress,
   saveProgress,
   loadBests,
-  saveBests
+  saveBests,
+  normalizeCoins,
+  loadCoins,
+  saveCoins
 } from './progress.js';
 
 function createStorage(entries = {}) {
@@ -72,14 +75,52 @@ describe('almacenamiento', () => {
     expect(loadProgress(5, storage)).toEqual({ unlocked: 3 });
   });
 
-  it('recupera el récord antiguo como nivel 1', () => {
+  it('recupera el récord antiguo como nivel 1 en metros', () => {
     const storage = createStorage({ flapy_plane_best_score_v1: '14' });
-    expect(loadBests(storage)).toEqual({ 1: 14 });
+    expect(loadBests(storage)).toEqual({ 1: 504 });
+  });
+
+  it('migra los récords por nivel de obstáculos a metros', () => {
+    const storage = createStorage({
+      flapy_plane_bests_v2: JSON.stringify({ 1: 10, 2: 30 })
+    });
+    expect(loadBests(storage)).toEqual({ 1: 360, 2: 1080 });
+  });
+
+  it('prioriza los récords nuevos en metros', () => {
+    const storage = createStorage({
+      flapy_plane_bests_v3: JSON.stringify({ 1: 950 }),
+      flapy_plane_bests_v2: JSON.stringify({ 1: 30 })
+    });
+    expect(loadBests(storage)).toEqual({ 1: 950 });
   });
 
   it('guarda y recupera los récords por nivel', () => {
     const storage = createStorage();
-    saveBests({ 1: 30, 2: 12 }, storage);
-    expect(loadBests(storage)).toEqual({ 1: 30, 2: 12 });
+    saveBests({ 1: 1080, 2: 420 }, storage);
+    expect(loadBests(storage)).toEqual({ 1: 1080, 2: 420 });
+  });
+});
+
+describe('monedas', () => {
+  it('normaliza valores no válidos a cero', () => {
+    expect(normalizeCoins(null)).toBe(0);
+    expect(normalizeCoins(-4)).toBe(0);
+    expect(normalizeCoins('abc')).toBe(0);
+  });
+
+  it('redondea hacia abajo y acepta cadenas numéricas', () => {
+    expect(normalizeCoins('12.9')).toBe(12);
+    expect(normalizeCoins(7)).toBe(7);
+  });
+
+  it('guarda y recupera la cartera', () => {
+    const storage = createStorage();
+    saveCoins(37, storage);
+    expect(loadCoins(storage)).toBe(37);
+  });
+
+  it('empieza sin monedas si no hay datos', () => {
+    expect(loadCoins(createStorage())).toBe(0);
   });
 });

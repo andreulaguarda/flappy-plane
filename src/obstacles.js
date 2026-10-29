@@ -168,7 +168,7 @@ export function createObstacleSystem(scene) {
     return { root, bolt, halfWidth: 1.1 };
   }
 
-  function spawn(xPos, level, currentScore) {
+  function spawn(xPos, level, obstaclesPassed) {
     const types = level.types;
     const chosenType = types[Math.floor(Math.random() * types.length)];
 
@@ -191,7 +191,7 @@ export function createObstacleSystem(scene) {
     built.root.position.set(xPos, 0, 0);
     group.add(built.root);
 
-    const oscillates = (chosenType === 'ring' || chosenType === 'storm') && currentScore >= 15;
+    const oscillates = (chosenType === 'ring' || chosenType === 'storm') && obstaclesPassed >= 15;
 
     const obstacle = {
       type: chosenType,

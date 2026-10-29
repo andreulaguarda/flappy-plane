@@ -17,11 +17,15 @@
   <div id="ui-layer" class="ui-hidden">
     <div class="hud-top">
       <div class="hud-stats">
-        <div class="best-mini"><span data-i18n="bestLabel">BEST</span>: <span id="hud-best">0</span></div>
+        <div class="coin-mini">
+          <span class="coin-icon" aria-hidden="true"></span>
+          <span id="hud-coins">0</span>
+        </div>
+        <div class="best-mini"><span data-i18n="bestLabel">BEST</span>: <span id="hud-best">0 m</span></div>
       </div>
 
       <div class="score-center">
-        <div id="score-display">0</div>
+        <div id="score-display">0 m</div>
       </div>
 
       <div class="hud-controls">
@@ -59,6 +63,10 @@
       <div class="game-logo-badge" data-i18n="menuBadge">3D ARCADE</div>
       <h1 class="game-title" data-i18n="menuTitle">FLAPPY PLANE</h1>
       <p class="game-subtitle" data-i18n="menuSubtitle">Select a level and take off.</p>
+      <div class="wallet-chip">
+        <span class="coin-icon" aria-hidden="true"></span>
+        <span id="menu-coins">0</span>
+      </div>
       <div class="level-list" id="level-list"></div>
       <button class="icon-btn menu-sound" id="btn-sound-menu" data-i18n-title="soundToggle" title="Toggle sound" aria-label="Toggle sound">
         <svg id="icon-sound-on-menu" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -93,14 +101,18 @@
       <div class="game-logo-badge" id="go-level">LEVEL 1 · PIPE VALLEY</div>
       <h2 class="game-title" style="font-size: 2.2rem;" data-i18n="gameOverTitle">CRASH LANDING!</h2>
 
-      <div class="stats-grid">
+      <div class="stats-grid three">
         <div class="stat-box">
-          <div class="stat-label" data-i18n="scoreLabel">SCORE</div>
-          <div class="stat-value" id="go-score">0</div>
+          <div class="stat-label" data-i18n="distanceLabel">DISTANCE</div>
+          <div class="stat-value" id="go-distance">0 m</div>
         </div>
         <div class="stat-box">
           <div class="stat-label" data-i18n="bestLabel">BEST</div>
-          <div class="stat-value gold" id="go-best">0</div>
+          <div class="stat-value gold" id="go-best">0 m</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label" data-i18n="coinsLabel">COINS</div>
+          <div class="stat-value gold" id="go-coins">+0</div>
         </div>
       </div>
 
@@ -121,14 +133,18 @@
       <h2 class="game-title" id="complete-title" style="font-size: 2.2rem;">PERFECT LANDING!</h2>
       <p class="game-subtitle" id="complete-subtitle">A flawless flight from takeoff to touchdown.</p>
 
-      <div class="stats-grid">
+      <div class="stats-grid three">
         <div class="stat-box">
-          <div class="stat-label" data-i18n="scoreLabel">SCORE</div>
-          <div class="stat-value" id="complete-score">0</div>
+          <div class="stat-label" data-i18n="distanceLabel">DISTANCE</div>
+          <div class="stat-value" id="complete-distance">0 m</div>
         </div>
         <div class="stat-box">
           <div class="stat-label" data-i18n="bestLabel">BEST</div>
-          <div class="stat-value gold" id="complete-best">0</div>
+          <div class="stat-value gold" id="complete-best">0 m</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label" data-i18n="coinsLabel">COINS</div>
+          <div class="stat-value gold" id="complete-coins">+0</div>
         </div>
       </div>
 
