@@ -1,38 +1,69 @@
-export function getMedalInfo(points) {
-  if (points >= 30) return { icon: '💎', text: 'Rango: Leyenda Suprema del Aire' };
-  if (points >= 20) return { icon: '🥇', text: 'Rango: Comandante de Oro' };
-  if (points >= 10) return { icon: '🥈', text: 'Rango: Capitán de Plata' };
-  if (points >= 4) return { icon: '🥉', text: 'Rango: Aviador de Bronce' };
-  return { icon: '🛩️', text: 'Rango: Cadete de Vuelo' };
+import { t } from './strings.js';
+
+export function getMedalInfo(points, total) {
+  const ratio = total > 0 ? points / total : 0;
+  if (ratio >= 1) return { icon: '💎', text: t('medalLegend') };
+  if (ratio >= 0.75) return { icon: '🥇', text: t('medalGold') };
+  if (ratio >= 0.5) return { icon: '🥈', text: t('medalSilver') };
+  if (ratio >= 0.25) return { icon: '🥉', text: t('medalBronze') };
+  return { icon: '🛩️', text: t('medalCadet') };
 }
 
 export class UI {
   constructor() {
+    this.uiLayer = document.getElementById('ui-layer');
     this.scoreDisplay = document.getElementById('score-display');
     this.hudBest = document.getElementById('hud-best');
     this.phaseBannerEl = document.getElementById('phase-banner');
     this.bannerSubEl = document.getElementById('banner-sub');
     this.bannerTitleEl = document.getElementById('banner-title');
 
+    this.menuScreen = document.getElementById('menu-screen');
+    this.levelList = document.getElementById('level-list');
     this.pauseScreen = document.getElementById('pause-screen');
     this.gameoverScreen = document.getElementById('gameover-screen');
+    this.completeScreen = document.getElementById('complete-screen');
 
     this.btnResume = document.getElementById('btn-resume');
     this.btnRestartPause = document.getElementById('btn-restart-pause');
+    this.btnMenuPause = document.getElementById('btn-menu-pause');
     this.btnRetry = document.getElementById('btn-retry');
+    this.btnMenuGameOver = document.getElementById('btn-menu-gameover');
+    this.btnNextLevel = document.getElementById('btn-next-level');
+    this.btnRetryComplete = document.getElementById('btn-retry-complete');
+    this.btnMenuComplete = document.getElementById('btn-menu-complete');
     this.btnPause = document.getElementById('btn-pause');
     this.btnSound = document.getElementById('btn-sound');
-    this.iconSoundOn = document.getElementById('icon-sound-on');
-    this.iconSoundOff = document.getElementById('icon-sound-off');
+    this.btnSoundMenu = document.getElementById('btn-sound-menu');
 
+    this.soundIcons = [
+      {
+        on: document.getElementById('icon-sound-on'),
+        off: document.getElementById('icon-sound-off')
+      },
+      {
+        on: document.getElementById('icon-sound-on-menu'),
+        off: document.getElementById('icon-sound-off-menu')
+      }
+    ];
+
+    this.goLevelEl = document.getElementById('go-level');
     this.goScoreEl = document.getElementById('go-score');
     this.goBestEl = document.getElementById('go-best');
-    this.goPhaseReachedEl = document.getElementById('go-phase-reached');
     this.goMedalIconEl = document.getElementById('go-medal-icon');
     this.goMedalTextEl = document.getElementById('go-medal-text');
 
+    this.completeBadgeEl = document.getElementById('complete-badge');
+    this.completeTitleEl = document.getElementById('complete-title');
+    this.completeSubtitleEl = document.getElementById('complete-subtitle');
+    this.completeScoreEl = document.getElementById('complete-score');
+    this.completeBestEl = document.getElementById('complete-best');
+    this.completeMedalIconEl = document.getElementById('complete-medal-icon');
+    this.completeMedalTextEl = document.getElementById('complete-medal-text');
+
     this.bannerTimeout = null;
     this.gameOverTimeout = null;
+    this.completeTimeout = null;
   }
 
   bind(handlers) {
@@ -43,9 +74,21 @@ export class UI {
 
     this.btnResume.addEventListener('click', wrap(handlers.onResume));
     this.btnRestartPause.addEventListener('click', wrap(handlers.onRestart));
+    this.btnMenuPause.addEventListener('click', wrap(handlers.onMenu));
     this.btnRetry.addEventListener('click', wrap(handlers.onRetry));
+    this.btnMenuGameOver.addEventListener('click', wrap(handlers.onMenu));
+    this.btnNextLevel.addEventListener('click', wrap(handlers.onNextLevel));
+    this.btnRetryComplete.addEventListener('click', wrap(handlers.onRetry));
+    this.btnMenuComplete.addEventListener('click', wrap(handlers.onMenu));
     this.btnPause.addEventListener('click', wrap(handlers.onPauseToggle));
     this.btnSound.addEventListener('click', wrap(handlers.onSoundToggle));
+    this.btnSoundMenu.addEventListener('click', wrap(handlers.onSoundToggle));
+
+    this.levelList.addEventListener('click', (event) => {
+      const card = event.target.closest('[data-level]');
+      if (!card || card.disabled) return;
+      handlers.onSelectLevel(Number(card.dataset.level));
+    });
   }
 
   setBest(value) {
@@ -60,14 +103,64 @@ export class UI {
     }
   }
 
-  showBanner(phase) {
-    this.bannerSubEl.textContent = phase.bannerSub;
-    this.bannerTitleEl.textContent = phase.bannerTitle;
+  showBanner({ sub, title }) {
+    this.bannerSubEl.textContent = sub;
+    this.bannerTitleEl.textContent = title;
     this.phaseBannerEl.classList.add('visible');
     if (this.bannerTimeout) clearTimeout(this.bannerTimeout);
     this.bannerTimeout = setTimeout(() => {
       this.phaseBannerEl.classList.remove('visible');
     }, 2600);
+  }
+
+  hideBanner() {
+    if (this.bannerTimeout) clearTimeout(this.bannerTimeout);
+    this.phaseBannerEl.classList.remove('visible');
+  }
+
+  showHud() {
+    this.uiLayer.classList.remove('ui-hidden');
+  }
+
+  hideHud() {
+    this.uiLayer.classList.add('ui-hidden');
+  }
+
+  showMenu({ levels, progress, bests }) {
+    this.levelList.innerHTML = '';
+
+    for (const level of levels) {
+      const unlocked = level.id <= progress.unlocked;
+      const best = bests[level.id] || 0;
+      const completed = best >= level.obstacleCount;
+
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = `level-card${unlocked ? '' : ' locked'}${completed ? ' completed' : ''}`;
+      card.dataset.level = String(level.id);
+      card.disabled = !unlocked;
+
+      const meta = unlocked ? t('levelBest', { score: best }) : t('locked');
+      const state = completed ? '✓' : unlocked ? '▶' : '🔒';
+
+      card.innerHTML = `
+        <span class="level-number">${String(level.id).padStart(2, '0')}</span>
+        <span class="level-info">
+          <span class="level-name">${t(level.nameKey)}</span>
+          <span class="level-meta">${meta}</span>
+        </span>
+        <span class="level-state">${state}</span>
+      `;
+
+      this.levelList.appendChild(card);
+    }
+
+    this.menuScreen.classList.remove('hidden');
+    this.hideHud();
+  }
+
+  hideMenu() {
+    this.menuScreen.classList.add('hidden');
   }
 
   showPause() {
@@ -78,8 +171,11 @@ export class UI {
     this.pauseScreen.classList.add('hidden');
   }
 
-  prepareGameOver({ score, best, phaseName, medal }) {
-    this.goPhaseReachedEl.textContent = `${phaseName} ALCANZADA`;
+  prepareGameOver({ level, score, best, medal }) {
+    this.goLevelEl.textContent = t('levelBadge', {
+      level: level.id,
+      name: t(level.nameKey)
+    });
     this.goScoreEl.textContent = score;
     this.goBestEl.textContent = best;
     this.goMedalIconEl.textContent = medal.icon;
@@ -96,10 +192,33 @@ export class UI {
     this.gameoverScreen.classList.add('hidden');
   }
 
+  prepareLevelComplete({ level, score, best, medal, hasNext }) {
+    this.completeBadgeEl.textContent = t('completeBadge', { level: level.id });
+    this.completeTitleEl.textContent = t(hasNext ? 'completeTitle' : 'allCompleteTitle');
+    this.completeSubtitleEl.textContent = t(
+      hasNext ? 'completeSubtitle' : 'allCompleteSubtitle'
+    );
+    this.completeScoreEl.textContent = score;
+    this.completeBestEl.textContent = best;
+    this.completeMedalIconEl.textContent = medal.icon;
+    this.completeMedalTextEl.textContent = medal.text;
+    this.btnNextLevel.style.display = hasNext ? '' : 'none';
+
+    if (this.completeTimeout) clearTimeout(this.completeTimeout);
+    this.completeTimeout = setTimeout(() => {
+      this.completeScreen.classList.remove('hidden');
+    }, 600);
+  }
+
+  hideComplete() {
+    if (this.completeTimeout) clearTimeout(this.completeTimeout);
+    this.completeScreen.classList.add('hidden');
+  }
+
   setSoundMuted(muted) {
-    if (this.iconSoundOn && this.iconSoundOff) {
-      this.iconSoundOn.classList.toggle('hidden-icon', muted);
-      this.iconSoundOff.classList.toggle('hidden-icon', !muted);
+    for (const icons of this.soundIcons) {
+      icons.on?.classList.toggle('hidden-icon', muted);
+      icons.off?.classList.toggle('hidden-icon', !muted);
     }
   }
 }

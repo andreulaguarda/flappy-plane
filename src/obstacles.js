@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CONFIG, getPhaseForScore } from './config.js';
+import { CONFIG } from './config.js';
 
 export function createObstacleSystem(scene) {
   const group = new THREE.Group();
@@ -168,12 +168,11 @@ export function createObstacleSystem(scene) {
     return { root, bolt, halfWidth: 1.1 };
   }
 
-  function spawn(xPos, currentScore) {
-    const phase = getPhaseForScore(currentScore);
-    const types = phase.types;
+  function spawn(xPos, level, currentScore) {
+    const types = level.types;
     const chosenType = types[Math.floor(Math.random() * types.length)];
 
-    const gapHeight = phase.gapSize;
+    const gapHeight = level.gapSize;
     const minGapY = -3.8;
     const maxGapY = 4.2;
     const gapY = THREE.MathUtils.lerp(minGapY, maxGapY, Math.random());

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PHASES } from './config.js';
+import { LEVELS } from './config.js';
 
 export function createWorld(canvas) {
   const renderer = new THREE.WebGLRenderer({
@@ -15,10 +15,10 @@ export function createWorld(canvas) {
   renderer.toneMappingExposure = 1.05;
 
   const scene = new THREE.Scene();
-  const currentSkyColor = new THREE.Color(PHASES[0].skyHex);
-  const targetSkyColor = new THREE.Color(PHASES[0].skyHex);
-  const currentFogColor = new THREE.Color(PHASES[0].fogHex);
-  const targetFogColor = new THREE.Color(PHASES[0].fogHex);
+  const currentSkyColor = new THREE.Color(LEVELS[0].skyHex);
+  const targetSkyColor = new THREE.Color(LEVELS[0].skyHex);
+  const currentFogColor = new THREE.Color(LEVELS[0].fogHex);
+  const targetFogColor = new THREE.Color(LEVELS[0].fogHex);
 
   scene.background = currentSkyColor;
   scene.fog = new THREE.Fog(currentFogColor, 58, 135);

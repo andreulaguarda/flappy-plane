@@ -1,52 +1,82 @@
 import { describe, it, expect } from 'vitest';
-import { PHASES, CONFIG, getPhaseForScore, speedForScore } from './config.js';
+import { LEVELS, getLevel, speedForLevel, isLastLevel } from './config.js';
+import { STRINGS } from './strings.js';
 
-describe('getPhaseForScore', () => {
-  it('empieza en la fase 1', () => {
-    expect(getPhaseForScore(0).id).toBe(1);
+describe('LEVELS', () => {
+  it('tiene cinco niveles', () => {
+    expect(LEVELS).toHaveLength(5);
   });
 
-  it('mantiene la fase 1 antes del primer umbral', () => {
-    expect(getPhaseForScore(5).id).toBe(1);
+  it('los ids son consecutivos desde 1', () => {
+    LEVELS.forEach((level, index) => {
+      expect(level.id).toBe(index + 1);
+    });
   });
 
-  it('desbloquea la fase 2 en el umbral exacto', () => {
-    expect(getPhaseForScore(6).id).toBe(2);
+  it('cada nivel tiene 30 obstáculos', () => {
+    for (const level of LEVELS) {
+      expect(level.obstacleCount).toBe(30);
+    }
   });
 
-  it('desbloquea la fase 3 en el umbral exacto', () => {
-    expect(getPhaseForScore(13).id).toBe(3);
+  it('la velocidad final es mayor que la inicial', () => {
+    for (const level of LEVELS) {
+      expect(level.speedEnd).toBeGreaterThan(level.speedStart);
+    }
   });
 
-  it('desbloquea la fase 4 en el umbral exacto', () => {
-    expect(getPhaseForScore(21).id).toBe(4);
+  it('la dificultad crece entre niveles', () => {
+    for (let i = 1; i < LEVELS.length; i++) {
+      expect(LEVELS[i].speedStart).toBeGreaterThan(LEVELS[i - 1].speedStart);
+      expect(LEVELS[i].gapSize).toBeLessThan(LEVELS[i - 1].gapSize);
+    }
   });
 
-  it('desbloquea la fase 5 en el umbral exacto', () => {
-    expect(getPhaseForScore(30).id).toBe(5);
+  it('cada nivel tiene tipos de obstáculo válidos', () => {
+    const validTypes = ['pipe', 'tower', 'ring', 'storm'];
+    for (const level of LEVELS) {
+      expect(level.types.length).toBeGreaterThan(0);
+      for (const type of level.types) expect(validTypes).toContain(type);
+    }
   });
 
-  it('se queda en la fase 5 con puntuaciones altas', () => {
-    expect(getPhaseForScore(999).id).toBe(5);
-  });
-
-  it('los umbrales están en orden creciente', () => {
-    for (let i = 1; i < PHASES.length; i++) {
-      expect(PHASES[i].minScore).toBeGreaterThan(PHASES[i - 1].minScore);
+  it('cada nivel tiene un nombre traducido', () => {
+    for (const level of LEVELS) {
+      expect(STRINGS.en[level.nameKey]).toBeTruthy();
     }
   });
 });
 
-describe('speedForScore', () => {
-  it('usa la velocidad base al empezar', () => {
-    expect(speedForScore(0)).toBe(CONFIG.baseSpeed);
+describe('getLevel', () => {
+  it('devuelve el nivel por id', () => {
+    expect(getLevel(3).id).toBe(3);
   });
 
-  it('aumenta la velocidad con la puntuación', () => {
-    expect(speedForScore(10)).toBeGreaterThan(CONFIG.baseSpeed);
+  it('cae al nivel 1 con un id desconocido', () => {
+    expect(getLevel(99).id).toBe(1);
+  });
+});
+
+describe('speedForLevel', () => {
+  const level = LEVELS[0];
+
+  it('empieza en la velocidad inicial del nivel', () => {
+    expect(speedForLevel(level, 0)).toBe(level.speedStart);
   });
 
-  it('no supera la velocidad máxima', () => {
-    expect(speedForScore(10000)).toBe(CONFIG.maxSpeed);
+  it('termina en la velocidad final del nivel', () => {
+    expect(speedForLevel(level, level.obstacleCount)).toBe(level.speedEnd);
+  });
+
+  it('no se sale del rango del nivel', () => {
+    expect(speedForLevel(level, 999)).toBe(level.speedEnd);
+    expect(speedForLevel(level, -5)).toBe(level.speedStart);
+  });
+});
+
+describe('isLastLevel', () => {
+  it('detecta el último nivel', () => {
+    expect(isLastLevel(5)).toBe(true);
+    expect(isLastLevel(4)).toBe(false);
   });
 });

@@ -2,14 +2,23 @@ import * as THREE from 'three';
 import {
   CONFIG,
   STATE,
-  PHASES,
-  STORAGE_BEST_KEY,
-  getPhaseForScore,
-  speedForScore
+  LEVELS,
+  getLevel,
+  speedForLevel,
+  isLastLevel
 } from './config.js';
 import { hitsGap, hitsFloor, hitsCeiling, passedObstacle } from './collision.js';
 import { bindInput } from './input.js';
 import { getMedalInfo } from './ui.js';
+import {
+  loadProgress,
+  saveProgress,
+  loadBests,
+  saveBests,
+  unlockNextLevel,
+  updateBests
+} from './progress.js';
+import { t } from './strings.js';
 
 export class Game {
   constructor({ world, plane, propeller, environment, obstacles, particles, ui, sound }) {
@@ -22,22 +31,32 @@ export class Game {
     this.ui = ui;
     this.sound = sound;
 
-    this.state = STATE.TAKEOFF;
+    this.state = STATE.MENU;
+    this.level = LEVELS[0];
     this.score = 0;
-    this.bestScore = parseInt(localStorage.getItem(STORAGE_BEST_KEY) || '0', 10);
-    this.currentPhaseId = 1;
+    this.progress = loadProgress(LEVELS.length);
+    this.bests = loadBests();
+    this.bestScore = this.bests[this.level.id] || 0;
 
     this.runwayPlaneY = CONFIG.floorY + 0.88;
     this.planeY = this.runwayPlaneY;
     this.planeVelY = 0;
     this.scrollSpeed = 0;
     this.distSinceLastSpawn = 0;
+    this.obstaclesSpawned = 0;
     this.smokeTimer = 0;
     this.takeoffTimer = 0;
     this.crashStopDuration = 0.7;
     this.crashStartSpeed = 0;
     this.crashScrollSpeed = 0;
     this.crashStopTimer = 0;
+    this.landingTimer = 0;
+    this.landingDuration = CONFIG.landingDuration;
+    this.landingStartY = this.runwayPlaneY;
+    this.landingStartPitch = 0;
+    this.landingStartSpeed = 0;
+    this.landingApproachDistance = 0;
+    this.runwaySpawned = false;
     this.elapsedTime = 0;
     this.clock = new THREE.Clock();
 
@@ -45,22 +64,32 @@ export class Game {
       onResume: () => this.togglePause(),
       onRestart: () => {
         this.sound.playClick();
-        this.resetToRunway();
+        this.startLevel(this.level.id);
       },
       onRetry: () => {
         this.sound.playClick();
-        this.resetToRunway();
+        this.startLevel(this.level.id);
       },
       onPauseToggle: () => this.togglePause(),
-      onSoundToggle: () => this.toggleSound()
+      onSoundToggle: () => this.toggleSound(),
+      onSelectLevel: (id) => {
+        this.sound.playClick();
+        this.startLevel(id);
+      },
+      onNextLevel: () => {
+        this.sound.playClick();
+        this.startLevel(this.level.id + 1);
+      },
+      onMenu: () => {
+        this.sound.playClick();
+        this.showMenu();
+      }
     });
 
     bindInput(this);
 
-    this.ui.setBest(this.bestScore);
     this.ui.setSoundMuted(this.sound.muted);
-
-    this.resetToRunway();
+    this.showMenu();
   }
 
   start() {
@@ -71,32 +100,80 @@ export class Game {
     animate();
   }
 
-  resetToRunway() {
+  resetRun() {
     this.obstacles.clear();
     this.particles.clear();
 
     this.score = 0;
-    this.currentPhaseId = 1;
     this.runwayPlaneY = CONFIG.floorY + 0.88;
     this.planeY = this.runwayPlaneY;
     this.planeVelY = 0;
     this.scrollSpeed = 0;
     this.distSinceLastSpawn = 0;
+    this.obstaclesSpawned = 0;
     this.smokeTimer = 0;
     this.takeoffTimer = 0;
     this.crashStartSpeed = 0;
     this.crashScrollSpeed = 0;
     this.crashStopTimer = 0;
+    this.landingTimer = 0;
+    this.landingDuration = CONFIG.landingDuration;
+    this.landingStartY = this.runwayPlaneY;
+    this.landingStartPitch = 0;
+    this.landingStartSpeed = 0;
+    this.landingApproachDistance = 0;
+    this.runwaySpawned = false;
 
     this.environment.resetRunway(this.world.planeAnchorX);
     this.plane.position.set(this.world.planeAnchorX, this.planeY, 0);
     this.plane.rotation.set(0, 0, 0.06);
     this.world.resetShake();
+  }
 
+  showMenu() {
+    this.resetRun();
+    this.state = STATE.MENU;
+    this.level = LEVELS[0];
+    this.bestScore = this.bests[this.level.id] || 0;
+
+    this.world.setPhase(this.level);
     this.ui.setScore(0);
+    this.ui.setBest(this.bestScore);
+    this.ui.hideBanner();
     this.ui.hidePause();
     this.ui.hideGameOver();
-    this.applyPhase(PHASES[0], false);
+    this.ui.hideComplete();
+    this.ui.hideHud();
+    saveBests(this.bests);
+    this.ui.showMenu({
+      levels: LEVELS,
+      progress: this.progress,
+      bests: this.bests
+    });
+  }
+
+  startLevel(id) {
+    if (id < 1 || id > this.progress.unlocked) return;
+    const level = getLevel(id);
+    if (!level) return;
+
+    this.level = level;
+    this.bestScore = this.bests[level.id] || 0;
+
+    this.resetRun();
+    this.world.setPhase(level);
+
+    this.ui.hideMenu();
+    this.ui.showHud();
+    this.ui.setScore(0);
+    this.ui.setBest(this.bestScore);
+    this.ui.hidePause();
+    this.ui.hideGameOver();
+    this.ui.hideComplete();
+    this.ui.showBanner({
+      sub: t('levelBannerSub', { level: level.id }),
+      title: t(level.nameKey)
+    });
 
     this.beginTakeoff();
   }
@@ -131,15 +208,6 @@ export class Game {
     this.ui.setSoundMuted(muted);
   }
 
-  applyPhase(phase, announce = false) {
-    this.world.setPhase(phase);
-
-    if (announce) {
-      this.sound.playPhaseUp();
-      this.ui.showBanner(phase);
-    }
-  }
-
   triggerGameOver() {
     if (this.state === STATE.GAMEOVER) return;
     this.state = STATE.GAMEOVER;
@@ -161,16 +229,36 @@ export class Game {
 
     if (this.score > this.bestScore) {
       this.bestScore = this.score;
-      localStorage.setItem(STORAGE_BEST_KEY, String(this.bestScore));
+      this.bests = updateBests(this.bests, this.level.id, this.score);
+      saveBests(this.bests);
       this.ui.setBest(this.bestScore);
     }
 
-    const phase = getPhaseForScore(this.score);
     this.ui.prepareGameOver({
+      level: this.level,
       score: this.score,
       best: this.bestScore,
-      phaseName: phase.name,
-      medal: getMedalInfo(this.score)
+      medal: getMedalInfo(this.score, this.level.obstacleCount)
+    });
+  }
+
+  completeLevel() {
+    this.state = STATE.LEVEL_COMPLETE;
+
+    this.bests = updateBests(this.bests, this.level.id, this.score);
+    this.bestScore = this.bests[this.level.id] || this.score;
+    this.progress = unlockNextLevel(this.progress, this.level.id, LEVELS.length);
+    saveBests(this.bests);
+    saveProgress(this.progress);
+
+    this.ui.setBest(this.bestScore);
+    this.sound.playPhaseUp();
+    this.ui.prepareLevelComplete({
+      level: this.level,
+      score: this.score,
+      best: this.bestScore,
+      medal: getMedalInfo(this.score, this.level.obstacleCount),
+      hasNext: !isLastLevel(this.level.id)
     });
   }
 
@@ -185,17 +273,22 @@ export class Game {
     } else if (this.state === STATE.TAKEOFF) {
       const pSpeed = 12 + 26 * Math.min(1, this.takeoffTimer / 1.0);
       this.propeller.rotation.x += pSpeed * dt;
+    } else if (this.state === STATE.LANDING) {
+      this.propeller.rotation.x += 22 * dt;
     } else if (this.state === STATE.GAMEOVER) {
       this.propeller.rotation.x += 8 * dt;
+    } else if (this.state === STATE.MENU) {
+      this.propeller.rotation.x += 5 * dt;
     }
 
-    let activeScroll;
-    if (this.state === STATE.PAUSED) {
-      activeScroll = 0;
-    } else if (this.state === STATE.PLAYING || this.state === STATE.TAKEOFF) {
+    let activeScroll = 0;
+    if (
+      this.state === STATE.PLAYING ||
+      this.state === STATE.TAKEOFF ||
+      this.state === STATE.LANDING
+    ) {
       activeScroll = this.scrollSpeed;
-    } else {
-      // GAMEOVER: scroll residual que decae en updateGameOver hasta congelar el mundo
+    } else if (this.state === STATE.GAMEOVER) {
       activeScroll = this.crashScrollSpeed;
     }
 
@@ -205,11 +298,13 @@ export class Game {
       this.updateTakeoff(dt);
     } else if (this.state === STATE.PLAYING) {
       this.updatePlaying(dt);
+    } else if (this.state === STATE.LANDING) {
+      this.updateLanding(dt);
     } else if (this.state === STATE.GAMEOVER) {
       this.updateGameOver(dt);
     }
 
-    if (this.state !== STATE.PAUSED) {
+    if (this.state !== STATE.PAUSED && this.state !== STATE.MENU) {
       this.particles.update(dt, activeScroll);
     }
 
@@ -218,12 +313,11 @@ export class Game {
   }
 
   updateTakeoff(dt) {
-    const duration = 2.1;
     this.takeoffTimer += dt;
-    const t = Math.min(1, this.takeoffTimer / duration);
+    const t = Math.min(1, this.takeoffTimer / CONFIG.takeoffDuration);
 
     // Aceleración progresiva por la pista
-    this.scrollSpeed = CONFIG.baseSpeed * (t * t * (3 - 2 * t));
+    this.scrollSpeed = this.level.speedStart * (t * t * (3 - 2 * t));
 
     // Fases: carrera en tierra (0-0.55), rotación del morro (0.42-0.62), ascenso (0.58-1)
     const rollT = Math.min(1, t / 0.55);
@@ -254,12 +348,13 @@ export class Game {
     }
 
     if (t >= 1) {
-      this.scrollSpeed = CONFIG.baseSpeed;
+      this.scrollSpeed = this.level.speedStart;
       // Impulso suave, coherente con el final del ascenso (sin salto brusco)
       this.planeVelY = CONFIG.jumpImpulse * 0.42;
       this.distSinceLastSpawn = 0;
-      this.obstacles.spawn(16, 0);
-      this.obstacles.spawn(16 + CONFIG.spawnIntervalDist, 0);
+      this.obstaclesSpawned = 2;
+      this.obstacles.spawn(16, this.level, this.score);
+      this.obstacles.spawn(16 + CONFIG.spawnIntervalDist, this.level, this.score);
       this.state = STATE.PLAYING;
     }
   }
@@ -293,13 +388,24 @@ export class Game {
     if (hitsFloor(this.planeY, CONFIG.planeRadius, CONFIG.floorY)) {
       this.planeY = CONFIG.floorY + CONFIG.planeRadius;
       this.plane.position.y = this.planeY;
-      this.triggerGameOver();
+
+      // Tras superar el último obstáculo el tramo final es seguro: no se puede
+      // perder el nivel mientras se aproxima la pista de aterrizaje.
+      if (this.score < this.level.obstacleCount) {
+        this.triggerGameOver();
+        return;
+      }
+      this.planeVelY = Math.max(0, this.planeVelY);
     }
 
     this.distSinceLastSpawn += this.scrollSpeed * dt;
-    if (this.distSinceLastSpawn >= CONFIG.spawnIntervalDist) {
+    if (
+      this.obstaclesSpawned < this.level.obstacleCount &&
+      this.distSinceLastSpawn >= CONFIG.spawnIntervalDist
+    ) {
       this.distSinceLastSpawn = 0;
-      this.obstacles.spawn(CONFIG.obstacleSpawnX, this.score);
+      this.obstacles.spawn(CONFIG.obstacleSpawnX, this.level, this.score);
+      this.obstaclesSpawned++;
     }
 
     this.obstacles.move(dt, this.scrollSpeed, this.elapsedTime);
@@ -339,17 +445,102 @@ export class Game {
           );
         }
 
-        this.scrollSpeed = speedForScore(this.score, CONFIG);
-
-        const newPhase = getPhaseForScore(this.score);
-        if (newPhase.id !== this.currentPhaseId) {
-          this.currentPhaseId = newPhase.id;
-          this.applyPhase(newPhase, true);
+        if (this.score > this.bestScore) {
+          this.bestScore = this.score;
+          this.bests = updateBests(this.bests, this.level.id, this.score);
+          this.ui.setBest(this.bestScore);
         }
+
+        this.scrollSpeed = speedForLevel(this.level, this.score);
       }
     }
 
     this.obstacles.cleanup();
+
+    this.updateLandingApproach(dt);
+  }
+
+  updateLandingApproach(dt) {
+    if (this.state !== STATE.PLAYING) return;
+    const planeX = this.plane.position.x;
+
+    // Cuando ya se han superado todos los obstáculos, aparece la pista al fondo
+    // y el avión vuela hacia ella antes de iniciar la maniobra de aterrizaje.
+    if (!this.runwaySpawned && this.score >= this.level.obstacleCount) {
+      const lastObstacle = this.obstacles.obstacles[this.obstacles.obstacles.length - 1];
+      const obstacleClear = !lastObstacle || lastObstacle.mesh.position.x < planeX - 8;
+      if (obstacleClear) {
+        this.runwaySpawned = true;
+        this.landingApproachDistance = 0;
+        this.environment.resetRunway(this.world.planeAnchorX + 34.5);
+        this.ui.showBanner({
+          sub: t('levelBannerSub', { level: this.level.id }),
+          title: t('finalApproach')
+        });
+      }
+    }
+
+    if (!this.runwaySpawned) return;
+
+    this.landingApproachDistance += this.scrollSpeed * dt;
+    if (this.landingApproachDistance >= CONFIG.landingApproachDistance) {
+      this.beginLanding();
+    }
+  }
+
+  beginLanding() {
+    this.state = STATE.LANDING;
+    this.landingTimer = 0;
+    this.landingStartY = this.planeY;
+    this.landingStartPitch = this.plane.rotation.z;
+    this.landingStartSpeed = this.scrollSpeed;
+    this.landingDuration = THREE.MathUtils.clamp(
+      CONFIG.landingDuration + Math.max(0, this.planeY - 0.8) * 0.06,
+      CONFIG.landingDuration,
+      3.0
+    );
+    this.planeVelY = 0;
+    this.smokeTimer = 0;
+  }
+
+  updateLanding(dt) {
+    this.landingTimer += dt;
+    const t = Math.min(1, this.landingTimer / this.landingDuration);
+    const u = 1 - t;
+    const ease = (x) => x * x * (3 - 2 * x);
+
+    // Altura: desciende durante el primer 42 % de la maniobra y luego rueda
+    const liftT = Math.max(0, (u - 0.58) / 0.42);
+    const liftSmooth = ease(liftT);
+    this.planeY = THREE.MathUtils.lerp(this.runwayPlaneY, this.landingStartY, liftSmooth);
+
+    // Velocidad: misma curva que el despegue, pero invertida
+    this.scrollSpeed = this.landingStartSpeed * ease(u);
+
+    const groundBlend = 1 - liftSmooth;
+    const rumble = Math.sin(this.elapsedTime * 47) * 0.022 * groundBlend;
+    this.plane.position.set(this.world.planeAnchorX, this.planeY + rumble, 0);
+
+    // Morro: desciende del cabeceo actual a una actitud de flare y se asienta en pista
+    const pitchAir = THREE.MathUtils.lerp(this.landingStartPitch, 0.32, Math.min(1, t * 4));
+    this.plane.rotation.z = THREE.MathUtils.lerp(pitchAir, 0.06, groundBlend);
+    this.plane.rotation.x = Math.sin(this.elapsedTime * 9) * 0.04 * (0.3 + groundBlend);
+
+    this.smokeTimer += dt;
+    const smokeInterval = groundBlend > 0.5 ? 0.09 : 0.055;
+    if (this.smokeTimer > smokeInterval) {
+      this.smokeTimer = 0;
+      const smokeY = groundBlend > 0.5 ? this.runwayPlaneY - 0.72 : this.planeY - 0.1;
+      this.particles.spawnSmoke(this.plane.position.x - 1.25, smokeY, 0);
+    }
+
+    if (t >= 1) {
+      this.scrollSpeed = 0;
+      this.planeY = this.runwayPlaneY;
+      this.plane.position.set(this.world.planeAnchorX, this.planeY, 0);
+      this.plane.rotation.set(0, 0, 0.06);
+      this.completeLevel();
+    }
   }
 
   updateGameOver(dt) {

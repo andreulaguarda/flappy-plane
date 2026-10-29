@@ -39,4 +39,4 @@
 
     Nivel 20: Londres (¡Meta final! Aterrizaje triunfal en el punto de partida para completar la vuelta al mundo).
 
-Vamos a separar el nivel actual en varios niveles (uno por cada fase actual), a hacerlos un poco más largos y a que tengan principio (despegue) y final (aterrizaje, igual que el despegue pero al revés). Y hacemos un menu inicial donde se elige el nivel, y cuando nos matan en el modal ese que sea "Reintentar" y otro botón "Salir o menu o algo así" que vuelva al menu de elegir nivel
+Vamos a separar el nivel actual en varios niveles (uno por cada fase actual), a hacerlos un poco más largos y a que tengan principio (despegue) y final (aterrizaje, igual que el despegue pero al revés). Y hacemos un menu inicial donde se elige el nivel, y cuando nos matan en el modal ese que sea "Reintentar" y otro botón "Salir o menu o algo así" que vuelva al menu de elegir nivel. Vamos a aprovechar para poner todos los textos del juego en inglés también, ya lo traduciremos al español, pero por ahora solo en english.

@@ -6,6 +6,9 @@ import { createParticleSystem } from './particles.js';
 import { UI } from './ui.js';
 import { sound } from './audio.js';
 import { Game } from './game.js';
+import { applyStaticTranslations } from './strings.js';
+
+applyStaticTranslations();
 
 const canvas = document.getElementById('game-canvas');
 const world = createWorld(canvas);
@@ -28,5 +31,9 @@ const game = new Game({
   ui,
   sound
 });
+
+if (import.meta.env.DEV) {
+  window.__flappyPlaneGame = game;
+}
 
 game.start();

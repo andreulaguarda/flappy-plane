@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#38bdf8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Flapy Plane - 3D Arcade</title>
+  <title>Flappy Plane - 3D Arcade</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2338bdf8'/%3E%3Cpath d='M10 36 56 16 44 50 33 40 25 51 23 36Z' fill='%23facc15'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/styles/main.css" />
 </head>
 <body>
   <canvas id="game-canvas"></canvas>
 
-  <!-- HUD en partida -->
-  <div id="ui-layer">
+  <!-- In-game HUD -->
+  <div id="ui-layer" class="ui-hidden">
     <div class="hud-top">
       <div class="hud-stats">
-        <div class="best-mini">RÉCORD: <span id="hud-best">0</span></div>
+        <div class="best-mini"><span data-i18n="bestLabel">BEST</span>: <span id="hud-best">0</span></div>
       </div>
 
       <div class="score-center">
@@ -25,7 +25,7 @@
       </div>
 
       <div class="hud-controls">
-        <button class="icon-btn" id="btn-sound" title="Activar/Desactivar sonido" aria-label="Sonido">
+        <button class="icon-btn" id="btn-sound" data-i18n-title="soundToggle" title="Toggle sound" aria-label="Toggle sound">
           <svg id="icon-sound-on" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"></polygon>
             <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
@@ -37,7 +37,7 @@
             <line x1="17" y1="9" x2="23" y2="15"></line>
           </svg>
         </button>
-        <button class="icon-btn" id="btn-pause" title="Pausar juego" aria-label="Pausa">
+        <button class="icon-btn" id="btn-pause" data-i18n-title="pauseToggle" title="Pause game" aria-label="Pause game">
           <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
             <rect x="5" y="4" width="5" height="16" rx="2"></rect>
             <rect x="14" y="4" width="5" height="16" rx="2"></rect>
@@ -47,47 +47,99 @@
     </div>
   </div>
 
-  <!-- Notificación flotante de cambio de fase -->
+  <!-- Floating in-game banner -->
   <div id="phase-banner">
-    <div class="banner-sub" id="banner-sub">¡NUEVA ZONA DESBLOQUEADA!</div>
-    <div class="banner-title" id="banner-title">FASE 2: TORRES DE CIUDAD</div>
+    <div class="banner-sub" id="banner-sub">LEVEL 1</div>
+    <div class="banner-title" id="banner-title">PIPE VALLEY</div>
   </div>
 
-  <!-- Pantalla de Pausa -->
-  <div class="overlay-screen hidden" id="pause-screen">
-    <div class="modal-card">
-      <div class="game-logo-badge">VUELO EN ESPERA</div>
-      <h2 class="game-title" style="font-size: 2.1rem;">PAUSA</h2>
-      <p class="game-subtitle">Tómate un respiro antes de volver a los cielos.</p>
-      <button class="btn-primary" id="btn-resume">CONTINUAR VUELO</button>
-      <button class="btn-secondary" id="btn-restart-pause">REINICIAR PARTIDA</button>
+  <!-- Level select -->
+  <div class="overlay-screen" id="menu-screen">
+    <div class="modal-card menu-card">
+      <div class="game-logo-badge" data-i18n="menuBadge">3D ARCADE</div>
+      <h1 class="game-title" data-i18n="menuTitle">FLAPPY PLANE</h1>
+      <p class="game-subtitle" data-i18n="menuSubtitle">Select a level and take off.</p>
+      <div class="level-list" id="level-list"></div>
+      <button class="icon-btn menu-sound" id="btn-sound-menu" data-i18n-title="soundToggle" title="Toggle sound" aria-label="Toggle sound">
+        <svg id="icon-sound-on-menu" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"></polygon>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        </svg>
+        <svg id="icon-sound-off-menu" class="hidden-icon" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"></polygon>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+      </button>
     </div>
   </div>
 
-  <!-- Pantalla de Game Over -->
+  <!-- Pause -->
+  <div class="overlay-screen hidden" id="pause-screen">
+    <div class="modal-card">
+      <div class="game-logo-badge" data-i18n="pauseBadge">FLIGHT ON HOLD</div>
+      <h2 class="game-title" style="font-size: 2.1rem;" data-i18n="pauseTitle">PAUSED</h2>
+      <p class="game-subtitle" data-i18n="pauseSubtitle">Take a breath before returning to the skies.</p>
+      <button class="btn-primary" id="btn-resume" data-i18n="resumeFlight">RESUME FLIGHT</button>
+      <button class="btn-secondary" id="btn-restart-pause" data-i18n="restartLevel">RESTART LEVEL</button>
+      <button class="btn-secondary" id="btn-menu-pause" data-i18n="menu">MENU</button>
+    </div>
+  </div>
+
+  <!-- Game over -->
   <div class="overlay-screen hidden" id="gameover-screen">
     <div class="modal-card">
-      <div class="game-logo-badge" id="go-phase-reached">FASE 1 ALCANZADA</div>
-      <h2 class="game-title" style="font-size: 2.2rem;">¡ATERRIZAJE FORZOSO!</h2>
+      <div class="game-logo-badge" id="go-level">LEVEL 1 · PIPE VALLEY</div>
+      <h2 class="game-title" style="font-size: 2.2rem;" data-i18n="gameOverTitle">CRASH LANDING!</h2>
 
       <div class="stats-grid">
         <div class="stat-box">
-          <div class="stat-label">Puntuación</div>
+          <div class="stat-label" data-i18n="scoreLabel">SCORE</div>
           <div class="stat-value" id="go-score">0</div>
         </div>
         <div class="stat-box">
-          <div class="stat-label">Mejor Récord</div>
+          <div class="stat-label" data-i18n="bestLabel">BEST</div>
           <div class="stat-value gold" id="go-best">0</div>
         </div>
       </div>
 
       <div class="medal-row" id="go-medal-row">
         <span id="go-medal-icon">🥉</span>
-        <span id="go-medal-text">Rango: Piloto Novato</span>
+        <span id="go-medal-text">Rank: Flight Cadet</span>
       </div>
 
-      <button class="btn-primary" id="btn-retry">VOLAR DE NUEVO</button>
-      <div class="controls-hint">Toca el botón para reintentar</div>
+      <button class="btn-primary" id="btn-retry" data-i18n="retry">RETRY</button>
+      <button class="btn-secondary" id="btn-menu-gameover" data-i18n="menu">MENU</button>
+    </div>
+  </div>
+
+  <!-- Level complete -->
+  <div class="overlay-screen hidden" id="complete-screen">
+    <div class="modal-card">
+      <div class="game-logo-badge" id="complete-badge">LEVEL 1 COMPLETE</div>
+      <h2 class="game-title" id="complete-title" style="font-size: 2.2rem;">PERFECT LANDING!</h2>
+      <p class="game-subtitle" id="complete-subtitle">A flawless flight from takeoff to touchdown.</p>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-label" data-i18n="scoreLabel">SCORE</div>
+          <div class="stat-value" id="complete-score">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label" data-i18n="bestLabel">BEST</div>
+          <div class="stat-value gold" id="complete-best">0</div>
+        </div>
+      </div>
+
+      <div class="medal-row" id="complete-medal-row">
+        <span id="complete-medal-icon">💎</span>
+        <span id="complete-medal-text">Rank: Air Legend</span>
+      </div>
+
+      <button class="btn-primary" id="btn-next-level" data-i18n="nextLevel">NEXT LEVEL</button>
+      <button class="btn-secondary" id="btn-retry-complete" data-i18n="retry">RETRY</button>
+      <button class="btn-secondary" id="btn-menu-complete" data-i18n="menu">MENU</button>
     </div>
   </div>
 
