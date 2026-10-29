@@ -79,7 +79,9 @@ export function createObstacleSystem(scene) {
     root.add(botTower);
 
     const roof = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.4, 2.4), MATS.towerRoof);
-    roof.position.y = botTopY - 0.2;
+    // Ligeramente por debajo del techo de la torre para evitar caras coplanares
+    // (z-fighting) en la azotea.
+    roof.position.y = botTopY - 0.22;
     root.add(roof);
 
     for (let row = 1; row <= 5; row++) {

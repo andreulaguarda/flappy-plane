@@ -23,7 +23,7 @@ export const CONFIG = {
   ceilingY: 8.6,
   floorY: -7.8,
   planeRadius: 0.68,
-  coinRadius: 0.55,
+  coinRadius: 0.6,
   spawnIntervalDist: 11.2,
   obstacleDespawnX: -24,
   obstacleSpawnX: 28,

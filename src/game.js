@@ -320,16 +320,6 @@ export class Game {
 
     this.environment.update(dt, activeScroll);
 
-    if (
-      this.state === STATE.TAKEOFF ||
-      this.state === STATE.PLAYING ||
-      this.state === STATE.LANDING ||
-      this.state === STATE.GAMEOVER
-    ) {
-      this.coins.move(dt, activeScroll, this.elapsedTime);
-      this.coins.cleanup();
-    }
-
     if (this.state === STATE.TAKEOFF) {
       this.updateTakeoff(dt);
     } else if (this.state === STATE.PLAYING) {
@@ -338,6 +328,16 @@ export class Game {
       this.updateLanding(dt);
     } else if (this.state === STATE.GAMEOVER) {
       this.updateGameOver(dt);
+    }
+
+    // Las monedas se actualizan después de mover los obstáculos para quedar
+    // siempre perfectamente centradas en su hueco.
+    if (this.state === STATE.PLAYING || this.state === STATE.GAMEOVER) {
+      this.coins.move(dt, this.elapsedTime);
+      this.coins.cleanup();
+      if (this.state === STATE.PLAYING) {
+        this.collectCoins();
+      }
     }
 
     if (
@@ -428,7 +428,8 @@ export class Game {
         this.level,
         this.obstaclesPassed
       );
-      this.spawnCoinBetween(firstObstacle, secondObstacle);
+      this.coins.spawn(firstObstacle);
+      this.coins.spawn(secondObstacle);
       this.state = STATE.PLAYING;
     }
   }
@@ -478,22 +479,18 @@ export class Game {
       this.distSinceLastSpawn >= CONFIG.spawnIntervalDist
     ) {
       this.distSinceLastSpawn = 0;
-      const previousObstacle = this.obstacles.obstacles[this.obstacles.obstacles.length - 1];
       const newObstacle = this.obstacles.spawn(
         CONFIG.obstacleSpawnX,
         this.level,
         this.obstaclesPassed
       );
-      if (previousObstacle) {
-        this.spawnCoinBetween(previousObstacle, newObstacle);
-      }
+      this.coins.spawn(newObstacle);
       this.obstaclesSpawned++;
     }
 
     this.obstacles.move(dt, this.scrollSpeed, this.elapsedTime);
 
     const planeX = this.plane.position.x;
-    this.collectCoins();
     for (let i = 0; i < this.obstacles.obstacles.length; i++) {
       const obs = this.obstacles.obstacles[i];
 
@@ -534,17 +531,6 @@ export class Game {
     this.obstacles.cleanup();
 
     this.updateLandingApproach(dt);
-  }
-
-  spawnCoinBetween(previousObstacle, nextObstacle) {
-    const x = (previousObstacle.mesh.position.x + nextObstacle.mesh.position.x) * 0.5;
-    const y = (previousObstacle.baseGapY + nextObstacle.baseGapY) * 0.5;
-    const clampedY = THREE.MathUtils.clamp(
-      y,
-      CONFIG.floorY + 2.2,
-      CONFIG.ceilingY - 2.2
-    );
-    this.coins.spawn(x, clampedY);
   }
 
   collectCoins() {
