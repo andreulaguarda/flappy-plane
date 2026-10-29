@@ -25,8 +25,17 @@ export const CONFIG = {
   obstacleDespawnX: -24,
   obstacleSpawnX: 28,
   takeoffDuration: 2.1,
+  takeoffSpeedStart: 0.4,
+  takeoffSpeedRamp: 0.5,
+  takeoffRotateAt: 0.42,
+  takeoffRotateBlend: 0.18,
+  takeoffLiftAt: 0.42,
+  takeoffExitY: -3.2,
+  takeoffExitVelY: 2.5,
   landingDuration: 2.1,
-  landingApproachDistance: 26
+  landingApproachDistance: 26,
+  landingTouchdownAt: 0.7,
+  landingSpeedAtTouchdown: 0.88
 };
 
 export const LEVELS = [

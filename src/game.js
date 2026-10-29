@@ -53,7 +53,6 @@ export class Game {
     this.landingTimer = 0;
     this.landingDuration = CONFIG.landingDuration;
     this.landingStartY = this.runwayPlaneY;
-    this.landingStartPitch = 0;
     this.landingStartSpeed = 0;
     this.landingApproachDistance = 0;
     this.runwaySpawned = false;
@@ -119,7 +118,6 @@ export class Game {
     this.landingTimer = 0;
     this.landingDuration = CONFIG.landingDuration;
     this.landingStartY = this.runwayPlaneY;
-    this.landingStartPitch = 0;
     this.landingStartSpeed = 0;
     this.landingApproachDistance = 0;
     this.runwaySpawned = false;
@@ -315,42 +313,52 @@ export class Game {
   updateTakeoff(dt) {
     this.takeoffTimer += dt;
     const t = Math.min(1, this.takeoffTimer / CONFIG.takeoffDuration);
+    const easeOut = (x) => 1 - (1 - x) * (1 - x);
 
-    // Aceleración progresiva por la pista
-    this.scrollSpeed = this.level.speedStart * (t * t * (3 - 2 * t));
+    // Aceleración: arranca ya con carrera y llega a la velocidad de crucero pronto,
+    // para que el despegue se sienta más horizontal.
+    const rampT = Math.min(1, t / CONFIG.takeoffSpeedRamp);
+    const speedFactor =
+      CONFIG.takeoffSpeedStart + (1 - CONFIG.takeoffSpeedStart) * easeOut(rampT);
+    this.scrollSpeed = this.level.speedStart * speedFactor;
 
-    // Fases: carrera en tierra (0-0.55), rotación del morro (0.42-0.62), ascenso (0.58-1)
-    const rollT = Math.min(1, t / 0.55);
-    const rotT = THREE.MathUtils.clamp((t - 0.42) / 0.2, 0, 1);
+    // Fases: carrera en tierra, rotación del morro y ascenso progresivo
+    const rotT = THREE.MathUtils.clamp(
+      (t - CONFIG.takeoffRotateAt) / CONFIG.takeoffRotateBlend,
+      0,
+      1
+    );
     const rotSmooth = rotT * rotT * (3 - 2 * rotT);
-    const liftT = Math.max(0, (t - 0.58) / 0.42);
+    const liftT = Math.max(0, (t - CONFIG.takeoffLiftAt) / (1 - CONFIG.takeoffLiftAt));
     const liftSmooth = liftT * liftT * (3 - 2 * liftT);
 
-    this.planeY = THREE.MathUtils.lerp(this.runwayPlaneY, 0.8, liftSmooth);
+    // Subida repartida en más tiempo y con menos altura: ángulo de ascenso menor
+    this.planeY = THREE.MathUtils.lerp(this.runwayPlaneY, CONFIG.takeoffExitY, liftSmooth);
 
     // Vibración de la carrera en tierra, se desvanece al ganar altura
-    const groundRumble = (1 - liftSmooth) * rollT;
+    const groundRumble = (1 - liftSmooth) * Math.min(1, t / 0.35);
     const rumble = Math.sin(this.elapsedTime * 47) * 0.022 * groundRumble;
     this.plane.position.set(this.world.planeAnchorX, this.planeY + rumble, 0);
 
     // Morro: estable en carrera, se levanta en la rotación y se asienta al ascender
-    const noseUp = THREE.MathUtils.lerp(0.06, 0.32, rotSmooth);
-    this.plane.rotation.z = THREE.MathUtils.lerp(noseUp, 0.24, liftSmooth);
+    const noseUp = THREE.MathUtils.lerp(0.06, 0.22, rotSmooth);
+    this.plane.rotation.z = THREE.MathUtils.lerp(noseUp, 0.18, liftSmooth);
     this.plane.rotation.x = Math.sin(this.elapsedTime * 9) * 0.04 * (0.3 + groundRumble);
 
     // Humo: de las ruedas durante la carrera, del escape una vez en el aire
     this.smokeTimer += dt;
-    const smokeInterval = liftT > 0 ? 0.055 : 0.09 - 0.04 * rollT;
+    const airborne = liftT > 0;
+    const smokeInterval = airborne ? 0.055 : 0.09 - 0.04 * rotT;
     if (this.smokeTimer > smokeInterval) {
       this.smokeTimer = 0;
-      const smokeY = liftT > 0 ? this.planeY - 0.1 : this.runwayPlaneY - 0.72;
+      const smokeY = airborne ? this.planeY - 0.1 : this.runwayPlaneY - 0.72;
       this.particles.spawnSmoke(this.plane.position.x - 1.25, smokeY, 0);
     }
 
     if (t >= 1) {
       this.scrollSpeed = this.level.speedStart;
-      // Impulso suave, coherente con el final del ascenso (sin salto brusco)
-      this.planeVelY = CONFIG.jumpImpulse * 0.42;
+      // Velocidad vertical coherente con la subida suave (sin salto brusco)
+      this.planeVelY = CONFIG.takeoffExitVelY;
       this.distSinceLastSpawn = 0;
       this.obstaclesSpawned = 2;
       this.obstacles.spawn(16, this.level, this.score);
@@ -472,7 +480,7 @@ export class Game {
       if (obstacleClear) {
         this.runwaySpawned = true;
         this.landingApproachDistance = 0;
-        this.environment.resetRunway(this.world.planeAnchorX + 34.5);
+        this.environment.resetRunway(this.world.planeAnchorX + 38);
         this.ui.showBanner({
           sub: t('levelBannerSub', { level: this.level.id }),
           title: t('finalApproach')
@@ -492,7 +500,6 @@ export class Game {
     this.state = STATE.LANDING;
     this.landingTimer = 0;
     this.landingStartY = this.planeY;
-    this.landingStartPitch = this.plane.rotation.z;
     this.landingStartSpeed = this.scrollSpeed;
     this.landingDuration = THREE.MathUtils.clamp(
       CONFIG.landingDuration + Math.max(0, this.planeY - 0.8) * 0.06,
@@ -506,31 +513,49 @@ export class Game {
   updateLanding(dt) {
     this.landingTimer += dt;
     const t = Math.min(1, this.landingTimer / this.landingDuration);
-    const u = 1 - t;
     const ease = (x) => x * x * (3 - 2 * x);
 
-    // Altura: desciende durante el primer 42 % de la maniobra y luego rueda
-    const liftT = Math.max(0, (u - 0.58) / 0.42);
-    const liftSmooth = ease(liftT);
-    this.planeY = THREE.MathUtils.lerp(this.runwayPlaneY, this.landingStartY, liftSmooth);
+    const touchdownAt = CONFIG.landingTouchdownAt;
+    const touchdown = Math.min(1, t / touchdownAt);
+    const touchSmooth = ease(touchdown);
+    const rollT = t <= touchdownAt ? 0 : (t - touchdownAt) / (1 - touchdownAt);
+    const groundBlend = ease(rollT);
 
-    // Velocidad: misma curva que el despegue, pero invertida
-    this.scrollSpeed = this.landingStartSpeed * ease(u);
+    const previousY = this.planeY;
 
-    const groundBlend = 1 - liftSmooth;
+    // Altura: planeo progresivo durante toda la aproximación y rodadura al final
+    this.planeY = THREE.MathUtils.lerp(this.landingStartY, this.runwayPlaneY, touchSmooth);
+
+    // Velocidad: se mantiene alta hasta el contacto y frena ya en pista
+    if (t < touchdownAt) {
+      this.scrollSpeed = THREE.MathUtils.lerp(
+        this.landingStartSpeed,
+        this.landingStartSpeed * CONFIG.landingSpeedAtTouchdown,
+        touchSmooth
+      );
+    } else {
+      this.scrollSpeed =
+        this.landingStartSpeed * CONFIG.landingSpeedAtTouchdown * (1 - groundBlend);
+    }
+
     const rumble = Math.sin(this.elapsedTime * 47) * 0.022 * groundBlend;
     this.plane.position.set(this.world.planeAnchorX, this.planeY + rumble, 0);
 
-    // Morro: desciende del cabeceo actual a una actitud de flare y se asienta en pista
-    const pitchAir = THREE.MathUtils.lerp(this.landingStartPitch, 0.32, Math.min(1, t * 4));
-    this.plane.rotation.z = THREE.MathUtils.lerp(pitchAir, 0.06, groundBlend);
+    // Morro: sigue la pendiente de descenso, hace flare al tocar y se asienta en pista
+    const velY = (this.planeY - previousY) / Math.max(dt, 1 / 240);
+    const flare = THREE.MathUtils.clamp((touchdown - 0.72) / 0.28, 0, 1);
+    const airPitch = THREE.MathUtils.clamp(velY * 0.07, -0.32, 0.16) + 0.16 * flare;
+    const targetPitch = THREE.MathUtils.lerp(airPitch, 0.06, groundBlend);
+    this.plane.rotation.z = THREE.MathUtils.lerp(this.plane.rotation.z, targetPitch, dt * 10);
     this.plane.rotation.x = Math.sin(this.elapsedTime * 9) * 0.04 * (0.3 + groundBlend);
 
+    // Humo: escape durante el planeo, ruedas tras el contacto
     this.smokeTimer += dt;
-    const smokeInterval = groundBlend > 0.5 ? 0.09 : 0.055;
+    const onGround = t >= touchdownAt;
+    const smokeInterval = onGround ? 0.09 : 0.055;
     if (this.smokeTimer > smokeInterval) {
       this.smokeTimer = 0;
-      const smokeY = groundBlend > 0.5 ? this.runwayPlaneY - 0.72 : this.planeY - 0.1;
+      const smokeY = onGround ? this.runwayPlaneY - 0.72 : this.planeY - 0.1;
       this.particles.spawnSmoke(this.plane.position.x - 1.25, smokeY, 0);
     }
 
