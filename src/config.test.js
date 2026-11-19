@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import * as THREE from 'three';
 import {
   LEVELS,
   MAX_LEVEL_DURATION_SEC,
@@ -6,6 +7,7 @@ import {
   KM_PER_SECOND,
   getLevel,
   getStageForProgress,
+  getTimeOfDayPhase,
   speedForLevel,
   speedForProgress,
   isLastLevel
@@ -13,8 +15,21 @@ import {
 import { STRINGS } from './strings.js';
 import { createLandmark } from './landmarks.js';
 import { createStageProp } from './stageProps.js';
-import { createObstacleSystem, resolveObstacleStyle } from './obstacles.js';
-import * as THREE from 'three';
+import {
+  COLUMN_STYLES,
+  createObstacleSystem,
+  resolveObstacleStyle
+} from './obstacles.js';
+
+const WATER_SURFACES = new Set([
+  'sea',
+  'mediterranean',
+  'arabian_sea',
+  'turquoise_sea',
+  'deep_pacific',
+  'sunset_ocean',
+  'north_atlantic'
+]);
 
 describe('LEVELS (Campaña La Vuelta al Mundo en 20 niveles)', () => {
   it('tiene veinte niveles', () => {
@@ -49,88 +64,68 @@ describe('LEVELS (Campaña La Vuelta al Mundo en 20 niveles)', () => {
     for (let i = 0; i < LEVELS.length - 1; i++) {
       expect(LEVELS[i].destinationLandmark).toBe(LEVELS[i + 1].originLandmark);
     }
-    // El nivel 20 regresa a Londres cerrando la vuelta al mundo
     expect(LEVELS[LEVELS.length - 1].destinationLandmark).toBe(LEVELS[0].originLandmark);
   });
 
-  it('cada nivel tiene etapas visuales encadenadas ordenadas de 0 a 1', () => {
+  it('cada nivel despega desde tierra firme y aterriza en tierra firme', () => {
     for (const level of LEVELS) {
       expect(level.stages.length).toBeGreaterThanOrEqual(3);
-      expect(level.stages[0].at).toBe(0);
-      for (let i = 1; i < level.stages.length; i++) {
-        expect(level.stages[i].at).toBeGreaterThan(level.stages[i - 1].at);
-        expect(level.stages[i].at).toBeLessThan(1);
-      }
+      const firstStage = level.stages[0];
+      const lastStage = level.stages[level.stages.length - 1];
+      expect(WATER_SURFACES.has(firstStage.surface)).toBe(false);
+      expect(WATER_SURFACES.has(lastStage.surface)).toBe(false);
     }
   });
 
-  it('la velocidad final es mayor que la inicial', () => {
+  it('la velocidad final es mayor que la inicial y la dificultad crece entre niveles', () => {
     for (const level of LEVELS) {
       expect(level.speedEnd).toBeGreaterThan(level.speedStart);
     }
-  });
-
-  it('la dificultad crece entre niveles', () => {
     for (let i = 1; i < LEVELS.length; i++) {
       expect(LEVELS[i].speedStart).toBeGreaterThan(LEVELS[i - 1].speedStart);
       expect(LEVELS[i].gapSize).toBeLessThan(LEVELS[i - 1].gapSize);
     }
   });
 
-  it('cada nivel encadena obstáculos temáticos fijos: edificios origen -> elementos del viaje -> edificios destino', () => {
-    const validJourneyStyles = [
-      'giant_trees',
-      'ocean_waves',
-      'alpine_peaks',
-      'med_islands_ruins',
-      'desert_pyramids',
-      'canyon_arches',
-      'jungle_temples',
-      'volcanic_spires',
-      'sakura_pagodas',
-      'coral_atolls',
-      'golden_gate_red_towers',
-      'icebergs_glaciers',
-      'sea_cliffs'
-    ];
-
+  it('todos los obstáculos son columnas temáticas fijas: origen -> mezcla en mitad -> destino', () => {
     const scene = new THREE.Scene();
     const obstacleSystem = createObstacleSystem(scene);
 
     for (const level of LEVELS) {
-      for (const stage of level.stages) {
-        expect(validJourneyStyles).toContain(stage.obstacleStyle);
-      }
+      expect(COLUMN_STYLES[level.originLandmark]).toBeTruthy();
+      expect(COLUMN_STYLES[level.destinationLandmark]).toBeTruthy();
 
       const startStyle = resolveObstacleStyle(level, 0);
       expect(startStyle).toEqual({
-        category: 'city',
-        cityId: level.originLandmark,
-        role: 'origin_building'
+        phase: 'origin',
+        bottomCity: level.originLandmark,
+        topCity: level.originLandmark,
+        role: `column:${level.originLandmark}`
       });
 
       const midIndex = Math.floor(level.obstacleCount * 0.5);
       const midStyle = resolveObstacleStyle(level, midIndex);
-      expect(midStyle.category).toBe('journey');
-      expect(validJourneyStyles).toContain(midStyle.style);
+      expect(midStyle.phase).toBe('mixed');
+      expect([level.originLandmark, level.destinationLandmark]).toContain(midStyle.bottomCity);
+      expect([level.originLandmark, level.destinationLandmark]).toContain(midStyle.topCity);
 
       const endStyle = resolveObstacleStyle(level, level.obstacleCount - 1);
       expect(endStyle).toEqual({
-        category: 'city',
-        cityId: level.destinationLandmark,
-        role: 'destination_building'
+        phase: 'destination',
+        bottomCity: level.destinationLandmark,
+        topCity: level.destinationLandmark,
+        role: `column:${level.destinationLandmark}`
       });
 
-      // Comprobar que los obstáculos generados son fijos (no se mueven verticalmente)
       const obsStart = obstacleSystem.spawn(10, level, 0);
       const obsMid = obstacleSystem.spawn(20, level, midIndex);
       const obsEnd = obstacleSystem.spawn(30, level, level.obstacleCount - 1);
       expect(obsStart.oscillates).toBe(false);
       expect(obsMid.oscillates).toBe(false);
       expect(obsEnd.oscillates).toBe(false);
-      expect(obsStart.mesh.children.length).toBeGreaterThan(0);
-      expect(obsMid.mesh.children.length).toBeGreaterThan(0);
-      expect(obsEnd.mesh.children.length).toBeGreaterThan(0);
+      expect(obsStart.mesh.children).toHaveLength(2);
+      expect(obsMid.mesh.children).toHaveLength(2);
+      expect(obsEnd.mesh.children).toHaveLength(2);
       obstacleSystem.clear();
     }
   });
@@ -141,7 +136,7 @@ describe('LEVELS (Campaña La Vuelta al Mundo en 20 niveles)', () => {
     }
   });
 
-  it('construye los monumentos 3D de origen y destino y los props de cada etapa sin errores', () => {
+  it('construye los monumentos 3D, edificios de ciudad, granjas y barcos sin errores', () => {
     const testedLandmarks = new Set();
     const testedProps = new Set();
 
@@ -169,12 +164,23 @@ describe('LEVELS (Campaña La Vuelta al Mundo en 20 niveles)', () => {
   });
 });
 
+describe('getTimeOfDayPhase', () => {
+  it('reparte equitativamente día, atardecer y noche a lo largo del nivel', () => {
+    expect(getTimeOfDayPhase(0)).toBe('day');
+    expect(getTimeOfDayPhase(0.2)).toBe('day');
+    expect(getTimeOfDayPhase(0.34)).toBe('sunset');
+    expect(getTimeOfDayPhase(0.5)).toBe('sunset');
+    expect(getTimeOfDayPhase(0.67)).toBe('night');
+    expect(getTimeOfDayPhase(1)).toBe('night');
+  });
+});
+
 describe('getStageForProgress', () => {
   it('selecciona la etapa correspondiente según el porcentaje de kilómetros recorridos', () => {
     const level1 = getLevel(1);
-    expect(getStageForProgress(level1, 0).id).toBe('english_countryside');
+    expect(getStageForProgress(level1, 0).id).toBe('london_departure_countryside');
     expect(getStageForProgress(level1, 0.45).id).toBe('english_channel');
-    expect(getStageForProgress(level1, 0.7).id).toBe('french_countryside');
+    expect(getStageForProgress(level1, 0.65).id).toBe('french_countryside');
     expect(getStageForProgress(level1, 0.95).id).toBe('paris_entry');
   });
 });

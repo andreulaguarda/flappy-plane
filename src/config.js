@@ -1,4 +1,4 @@
-import { LEVELS, getStageForProgress } from './levels.js';
+import { LEVELS, getStageForProgress, getTimeOfDayPhase } from './levels.js';
 import {
   MAX_LEVEL_DURATION_SEC,
   MAX_LEVEL_KM,
@@ -9,6 +9,7 @@ import {
 export {
   LEVELS,
   getStageForProgress,
+  getTimeOfDayPhase,
   MAX_LEVEL_DURATION_SEC,
   MAX_LEVEL_KM,
   KM_PER_SECOND,

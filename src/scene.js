@@ -1,6 +1,14 @@
 import * as THREE from 'three';
 import { LEVELS } from './config.js';
 
+const SUNSET_SKY = new THREE.Color(0xea580c);
+const SUNSET_FOG = new THREE.Color(0xfdba74);
+const SUNSET_LIGHT = new THREE.Color(0xffb074);
+
+const NIGHT_SKY = new THREE.Color(0x0b132b);
+const NIGHT_FOG = new THREE.Color(0x1e293b);
+const NIGHT_LIGHT = new THREE.Color(0x93c5fd);
+
 export function createWorld(canvas) {
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -16,13 +24,21 @@ export function createWorld(canvas) {
 
   const scene = new THREE.Scene();
   const currentSkyColor = new THREE.Color(LEVELS[0].skyHex);
+  const baseSkyColor = new THREE.Color(LEVELS[0].skyHex);
   const targetSkyColor = new THREE.Color(LEVELS[0].skyHex);
+
   const currentFogColor = new THREE.Color(LEVELS[0].fogHex);
+  const baseFogColor = new THREE.Color(LEVELS[0].fogHex);
   const targetFogColor = new THREE.Color(LEVELS[0].fogHex);
+
+  const baseLightColor = new THREE.Color(LEVELS[0].lightColor);
   const targetLightColor = new THREE.Color(LEVELS[0].lightColor);
 
   let targetFogNear = 58;
   let targetFogFar = 135;
+  let targetDirIntensity = 1.7;
+  let targetHemiIntensity = 1.15;
+  let currentProgress = 0;
 
   scene.background = currentSkyColor;
   scene.fog = new THREE.Fog(currentFogColor, targetFogNear, targetFogFar);
@@ -87,27 +103,81 @@ export function createWorld(canvas) {
   dirLight.shadow.camera.bottom = -d;
   scene.add(dirLight);
 
+  function computeTimeOfDayTargets(p) {
+    const clamped = Math.min(1, Math.max(0, Number.isFinite(p) ? p : 0));
+
+    // Reparto equitativo en 3 tercios:
+    // [0.00 - 0.33]: Día -> [0.33 - 0.66]: Atardecer -> [0.66 - 1.00]: Noche
+    if (clamped < 1 / 3) {
+      // Transición suave hacia el atardecer en el último tramo del día (0.25 -> 0.33)
+      const sunsetBlend = THREE.MathUtils.smoothstep(clamped, 0.25, 0.36);
+      targetSkyColor.copy(baseSkyColor).lerp(SUNSET_SKY, sunsetBlend * 0.85);
+      targetFogColor.copy(baseFogColor).lerp(SUNSET_FOG, sunsetBlend * 0.82);
+      targetLightColor.copy(baseLightColor).lerp(SUNSET_LIGHT, sunsetBlend);
+      targetDirIntensity = THREE.MathUtils.lerp(1.7, 1.45, sunsetBlend);
+      targetHemiIntensity = THREE.MathUtils.lerp(1.15, 0.98, sunsetBlend);
+    } else if (clamped < 2 / 3) {
+      const toSunset = THREE.MathUtils.smoothstep(clamped, 0.25, 0.38);
+      const toNight = THREE.MathUtils.smoothstep(clamped, 0.58, 0.7);
+      targetSkyColor
+        .copy(baseSkyColor)
+        .lerp(SUNSET_SKY, toSunset * 0.88)
+        .lerp(NIGHT_SKY, toNight);
+      targetFogColor
+        .copy(baseFogColor)
+        .lerp(SUNSET_FOG, toSunset * 0.85)
+        .lerp(NIGHT_FOG, toNight);
+      targetLightColor
+        .copy(baseLightColor)
+        .lerp(SUNSET_LIGHT, toSunset)
+        .lerp(NIGHT_LIGHT, toNight);
+      targetDirIntensity = THREE.MathUtils.lerp(1.45, 1.05, toNight);
+      targetHemiIntensity = THREE.MathUtils.lerp(0.98, 0.78, toNight);
+    } else {
+      const nightBlend = THREE.MathUtils.smoothstep(clamped, 0.58, 0.72);
+      targetSkyColor.copy(SUNSET_SKY).lerp(NIGHT_SKY, nightBlend);
+      targetFogColor.copy(SUNSET_FOG).lerp(NIGHT_FOG, nightBlend);
+      targetLightColor.copy(SUNSET_LIGHT).lerp(NIGHT_LIGHT, nightBlend);
+      targetDirIntensity = THREE.MathUtils.lerp(1.45, 1.05, nightBlend);
+      targetHemiIntensity = THREE.MathUtils.lerp(0.98, 0.78, nightBlend);
+    }
+  }
+
   function setPhase(phase, instant = false) {
     if (!phase) return;
-    targetSkyColor.setHex(phase.skyHex ?? LEVELS[0].skyHex);
-    targetFogColor.setHex(phase.fogHex ?? LEVELS[0].fogHex);
-    targetLightColor.setHex(phase.lightColor ?? 0xfffbeb);
+    baseSkyColor.setHex(phase.skyHex ?? LEVELS[0].skyHex);
+    baseFogColor.setHex(phase.fogHex ?? LEVELS[0].fogHex);
+    baseLightColor.setHex(phase.lightColor ?? 0xfffbeb);
     targetFogNear = Number.isFinite(phase.fogNear) ? phase.fogNear : 56;
     targetFogFar = Number.isFinite(phase.fogFar) ? phase.fogFar : 135;
+
+    if (instant) {
+      currentProgress = 0;
+    }
+    computeTimeOfDayTargets(currentProgress);
 
     if (instant) {
       currentSkyColor.copy(targetSkyColor);
       currentFogColor.copy(targetFogColor);
       dirLight.color.copy(targetLightColor);
+      dirLight.intensity = targetDirIntensity;
+      hemiLight.intensity = targetHemiIntensity;
       scene.fog.near = targetFogNear;
       scene.fog.far = targetFogFar;
     }
   }
 
+  function setTimeOfDay(progressRatio = 0) {
+    currentProgress = Math.min(1, Math.max(0, Number.isFinite(progressRatio) ? progressRatio : 0));
+    computeTimeOfDayTargets(currentProgress);
+  }
+
   function updateColors(dt) {
-    currentSkyColor.lerp(targetSkyColor, dt * 2.2);
-    currentFogColor.lerp(targetFogColor, dt * 2.2);
-    dirLight.color.lerp(targetLightColor, dt * 2.2);
+    currentSkyColor.lerp(targetSkyColor, dt * 2.4);
+    currentFogColor.lerp(targetFogColor, dt * 2.4);
+    dirLight.color.lerp(targetLightColor, dt * 2.4);
+    dirLight.intensity = THREE.MathUtils.lerp(dirLight.intensity, targetDirIntensity, dt * 2.4);
+    hemiLight.intensity = THREE.MathUtils.lerp(hemiLight.intensity, targetHemiIntensity, dt * 2.4);
     scene.fog.near = THREE.MathUtils.lerp(scene.fog.near, targetFogNear, dt * 2.0);
     scene.fog.far = THREE.MathUtils.lerp(scene.fog.far, targetFogFar, dt * 2.0);
   }
@@ -151,6 +221,7 @@ export function createWorld(canvas) {
       return planeAnchorX;
     },
     setPhase,
+    setTimeOfDay,
     updateColors,
     updateCamera,
     shake,

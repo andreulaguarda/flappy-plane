@@ -376,6 +376,9 @@ export class Game {
       this.particles.setAmbientMode(nextStage.ambientParticles || null);
     }
 
+    this.world.setTimeOfDay?.(progressRatio);
+    this.environment.setTimeOfDay?.(progressRatio);
+
     const displayedKm = Math.floor(this.distanceKm);
     if (displayedKm === this.lastDisplayedKm) return;
 

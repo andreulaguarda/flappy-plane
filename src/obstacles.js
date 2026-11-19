@@ -1,166 +1,186 @@
 import * as THREE from 'three';
-import { CONFIG, getStageForProgress } from './config.js';
+import { CONFIG } from './config.js';
 
-const CITY_STYLES = {
+export const COLUMN_STYLES = {
   london: {
-    wallHex: 0xb91c1c,
-    secondaryHex: 0xd6c7a9,
-    roofHex: 0x1e293b,
-    trimHex: 0xfacc15,
-    windowHex: 0xfef08a,
-    crown: 'gothic'
+    shaftHex: 0xd6c7a9,
+    fluteHex: 0xb91c1c,
+    capitalHex: 0x1e293b,
+    accentHex: 0xfacc15,
+    shaftSides: 8,
+    ringStyle: 'celtic_gothic',
+    capitalStyle: 'gothic_crown'
   },
   paris: {
-    wallHex: 0xeaddc5,
-    secondaryHex: 0xd6c7a9,
-    roofHex: 0x475569,
-    trimHex: 0x8b6946,
-    windowHex: 0xfef9c3,
-    crown: 'mansard'
+    shaftHex: 0x9a714c,
+    fluteHex: 0x6e4f32,
+    capitalHex: 0xeaddc5,
+    accentHex: 0xfacc15,
+    shaftSides: 8,
+    ringStyle: 'lattice',
+    capitalStyle: 'iron_belle_epoque'
   },
   rome: {
-    wallHex: 0xd6b88d,
-    secondaryHex: 0xa68963,
-    roofHex: 0xc2410c,
-    trimHex: 0xf8fafc,
-    windowHex: 0x451a03,
-    crown: 'roman'
+    shaftHex: 0xd6b88d,
+    fluteHex: 0xa68963,
+    capitalHex: 0xf8fafc,
+    accentHex: 0xc2410c,
+    shaftSides: 12,
+    ringStyle: 'spiral',
+    capitalStyle: 'corinthian_acanthus'
   },
   athens: {
-    wallHex: 0xf8fafc,
-    secondaryHex: 0xe2e8f0,
-    roofHex: 0x0284c7,
-    trimHex: 0xfacc15,
-    windowHex: 0x0369a1,
-    crown: 'hellenic'
+    shaftHex: 0xf8fafc,
+    fluteHex: 0xcbd5e1,
+    capitalHex: 0x0284c7,
+    accentHex: 0xfacc15,
+    shaftSides: 12,
+    ringStyle: 'classic_fluted',
+    capitalStyle: 'ionic_volutes'
   },
   cairo: {
-    wallHex: 0xd97706,
-    secondaryHex: 0xb45309,
-    roofHex: 0xfacc15,
-    trimHex: 0x06b6d4,
-    windowHex: 0x451a03,
-    crown: 'pharaonic'
+    shaftHex: 0xf59e0b,
+    fluteHex: 0xb45309,
+    capitalHex: 0x06b6d4,
+    accentHex: 0xfef08a,
+    shaftSides: 12,
+    ringStyle: 'hieroglyph',
+    capitalStyle: 'lotus_bell'
   },
   baghdad: {
-    wallHex: 0xeab308,
-    secondaryHex: 0xca8a04,
-    roofHex: 0xfacc15,
-    trimHex: 0x06b6d4,
-    windowHex: 0xfef08a,
-    crown: 'abbasid'
+    shaftHex: 0xeab308,
+    fluteHex: 0x06b6d4,
+    capitalHex: 0xfacc15,
+    accentHex: 0x0891b2,
+    shaftSides: 10,
+    ringStyle: 'hieroglyph',
+    capitalStyle: 'muqarnas_bulb'
   },
   bombay: {
-    wallHex: 0xd97706,
-    secondaryHex: 0xfef3c7,
-    roofHex: 0x9a3412,
-    trimHex: 0xfacc15,
-    windowHex: 0xfef08a,
-    crown: 'indo_saracenic'
+    shaftHex: 0xd97706,
+    fluteHex: 0x9a3412,
+    capitalHex: 0xfef3c7,
+    accentHex: 0xfacc15,
+    shaftSides: 8,
+    ringStyle: 'celtic_gothic',
+    capitalStyle: 'muqarnas_bulb'
   },
   calcutta: {
-    wallHex: 0xf8fafc,
-    secondaryHex: 0xcbd5e1,
-    roofHex: 0xe2e8f0,
-    trimHex: 0x10b981,
-    windowHex: 0xfef08a,
-    crown: 'neoclassical_dome'
+    shaftHex: 0xf8fafc,
+    fluteHex: 0xe2e8f0,
+    capitalHex: 0x10b981,
+    accentHex: 0xfacc15,
+    shaftSides: 12,
+    ringStyle: 'classic_fluted',
+    capitalStyle: 'corinthian_acanthus'
   },
   bangkok: {
-    wallHex: 0xfef9c3,
-    secondaryHex: 0x10b981,
-    roofHex: 0xdc2626,
-    trimHex: 0xfacc15,
-    windowHex: 0xfde047,
-    crown: 'thai_pagoda'
+    shaftHex: 0xfacc15,
+    fluteHex: 0xdc2626,
+    capitalHex: 0x10b981,
+    accentHex: 0xfef08a,
+    shaftSides: 10,
+    ringStyle: 'pagoda_brackets',
+    capitalStyle: 'oriental_bracket'
   },
   singapore: {
-    wallHex: 0x0284c7,
-    secondaryHex: 0x0369a1,
-    roofHex: 0xe2e8f0,
-    trimHex: 0x22d3ee,
-    windowHex: 0xa5f3fc,
-    crown: 'modern_skydeck'
+    shaftHex: 0x0284c7,
+    fluteHex: 0xe2e8f0,
+    capitalHex: 0x22d3ee,
+    accentHex: 0xec4899,
+    shaftSides: 8,
+    ringStyle: 'lattice',
+    capitalStyle: 'art_deco_stepped'
   },
   manila: {
-    wallHex: 0xfef3c7,
-    secondaryHex: 0x64748b,
-    roofHex: 0xc2410c,
-    trimHex: 0x92400e,
-    windowHex: 0xfde68a,
-    crown: 'colonial_fort'
+    shaftHex: 0xd6c7a9,
+    fluteHex: 0x78350f,
+    capitalHex: 0xc2410c,
+    accentHex: 0xfacc15,
+    shaftSides: 8,
+    ringStyle: 'pagoda_brackets',
+    capitalStyle: 'oriental_bracket'
   },
   tokyo: {
-    wallHex: 0xf8fafc,
-    secondaryHex: 0xef4444,
-    roofHex: 0x1e293b,
-    trimHex: 0xef4444,
-    windowHex: 0xfbcfe8,
-    crown: 'japanese_pagoda'
+    shaftHex: 0xef4444,
+    fluteHex: 0x1e293b,
+    capitalHex: 0x1e293b,
+    accentHex: 0xfacc15,
+    shaftSides: 12,
+    ringStyle: 'pagoda_brackets',
+    capitalStyle: 'oriental_bracket'
   },
   midway: {
-    wallHex: 0xf8fafc,
-    secondaryHex: 0x92400e,
-    roofHex: 0xf97316,
-    trimHex: 0x22d3ee,
-    windowHex: 0xfef08a,
-    crown: 'airfield_tower'
+    shaftHex: 0xfef3c7,
+    fluteHex: 0x22d3ee,
+    capitalHex: 0xf97316,
+    accentHex: 0x0284c7,
+    shaftSides: 10,
+    ringStyle: 'classic_fluted',
+    capitalStyle: 'beacon_crown'
   },
   honolulu: {
-    wallHex: 0xd97706,
-    secondaryHex: 0x334155,
-    roofHex: 0xb45309,
-    trimHex: 0x06b6d4,
-    windowHex: 0xfdba74,
-    crown: 'tiki_pavilion'
+    shaftHex: 0x78350f,
+    fluteHex: 0x334155,
+    capitalHex: 0xf97316,
+    accentHex: 0x22d3ee,
+    shaftSides: 8,
+    ringStyle: 'hieroglyph',
+    capitalStyle: 'beacon_crown'
   },
   san_francisco: {
-    wallHex: 0xdc2626,
-    secondaryHex: 0x38bdf8,
-    roofHex: 0x991b1b,
-    trimHex: 0xf8fafc,
-    windowHex: 0xfef08a,
-    crown: 'victorian_bay'
+    shaftHex: 0xdc2626,
+    fluteHex: 0x991b1b,
+    capitalHex: 0xf8fafc,
+    accentHex: 0xfacc15,
+    shaftSides: 8,
+    ringStyle: 'lattice',
+    capitalStyle: 'iron_belle_epoque'
   },
   new_york: {
-    wallHex: 0x475569,
-    secondaryHex: 0x334155,
-    roofHex: 0x1e293b,
-    trimHex: 0x34d399,
-    windowHex: 0xfef08a,
-    crown: 'art_deco'
+    shaftHex: 0x475569,
+    fluteHex: 0x34d399,
+    capitalHex: 0x1e293b,
+    accentHex: 0xfacc15,
+    shaftSides: 8,
+    ringStyle: 'classic_fluted',
+    capitalStyle: 'art_deco_stepped'
   },
   newfoundland: {
-    wallHex: 0xdc2626,
-    secondaryHex: 0x0284c7,
-    roofHex: 0xf8fafc,
-    trimHex: 0xeab308,
-    windowHex: 0xfef9c3,
-    crown: 'maritime_clapboard'
+    shaftHex: 0xf8fafc,
+    fluteHex: 0xdc2626,
+    capitalHex: 0x0284c7,
+    accentHex: 0xeab308,
+    shaftSides: 10,
+    ringStyle: 'spiral',
+    capitalStyle: 'beacon_crown'
   },
   greenland: {
-    wallHex: 0xb91c1c,
-    secondaryHex: 0x0284c7,
-    roofHex: 0xffffff,
-    trimHex: 0x7dd3fc,
-    windowHex: 0xfef08a,
-    crown: 'nordic_arctic'
+    shaftHex: 0xe0f2fe,
+    fluteHex: 0x38bdf8,
+    capitalHex: 0xb91c1c,
+    accentHex: 0xffffff,
+    shaftSides: 6,
+    ringStyle: 'glacial',
+    capitalStyle: 'glacial_basalt'
   },
   reykjavik: {
-    wallHex: 0xf1f5f9,
-    secondaryHex: 0x1e293b,
-    roofHex: 0x334155,
-    trimHex: 0x10b981,
-    windowHex: 0xa855f7,
-    crown: 'basalt_organ'
+    shaftHex: 0x1e293b,
+    fluteHex: 0xf1f5f9,
+    capitalHex: 0x10b981,
+    accentHex: 0xa855f7,
+    shaftSides: 6,
+    ringStyle: 'glacial',
+    capitalStyle: 'glacial_basalt'
   },
   dublin: {
-    wallHex: 0x9a3412,
-    secondaryHex: 0x64748b,
-    roofHex: 0x334155,
-    trimHex: 0x16a34a,
-    windowHex: 0xfef08a,
-    crown: 'georgian_castle'
+    shaftHex: 0x64748b,
+    fluteHex: 0x9a3412,
+    capitalHex: 0x16a34a,
+    accentHex: 0xfacc15,
+    shaftSides: 8,
+    ringStyle: 'celtic_gothic',
+    capitalStyle: 'gothic_crown'
   }
 };
 
@@ -169,31 +189,65 @@ export function resolveObstacleStyle(level, obstacleIndex = 0) {
   const clampedIndex = Math.max(0, obstacleIndex);
   const progressRatio = clampedIndex / Math.max(1, total - 1);
 
-  if (clampedIndex < 2 || progressRatio < 0.24) {
+  const originCity = level?.originLandmark || 'london';
+  const destinationCity = level?.destinationLandmark || 'paris';
+
+  // Primer tramo: columnas de la ciudad de origen
+  if (clampedIndex < 2 || progressRatio < 0.34) {
     return {
-      category: 'city',
-      cityId: level?.originLandmark || 'london',
-      role: 'origin_building'
+      phase: 'origin',
+      bottomCity: originCity,
+      topCity: originCity,
+      role: `column:${originCity}`
     };
   }
 
-  if (clampedIndex >= total - 2 || progressRatio >= 0.78) {
+  // Último tramo: columnas de la ciudad de destino
+  if (clampedIndex >= total - 2 || progressRatio >= 0.67) {
     return {
-      category: 'city',
-      cityId: level?.destinationLandmark || 'paris',
-      role: 'destination_building'
+      phase: 'destination',
+      bottomCity: destinationCity,
+      topCity: destinationCity,
+      role: `column:${destinationCity}`
     };
   }
 
-  const stage = getStageForProgress(level, progressRatio);
+  // Tramo central: mezcla entre columnas de origen y de destino
+  // (mitad y mitad arriba/abajo o alternando una de cada)
+  const mixMode = clampedIndex % 4;
+  if (mixMode === 0) {
+    return {
+      phase: 'mixed',
+      bottomCity: originCity,
+      topCity: destinationCity,
+      role: `column:${originCity}+${destinationCity}`
+    };
+  }
+  if (mixMode === 1) {
+    return {
+      phase: 'mixed',
+      bottomCity: destinationCity,
+      topCity: originCity,
+      role: `column:${destinationCity}+${originCity}`
+    };
+  }
+  if (mixMode === 2) {
+    return {
+      phase: 'mixed',
+      bottomCity: destinationCity,
+      topCity: destinationCity,
+      role: `column:${destinationCity}`
+    };
+  }
   return {
-    category: 'journey',
-    style: stage?.obstacleStyle || 'giant_trees',
-    role: stage?.obstacleStyle || 'giant_trees'
+    phase: 'mixed',
+    bottomCity: originCity,
+    topCity: originCity,
+    role: `column:${originCity}`
   };
 }
 
-function makeMat(color, roughness = 0.65, extra = {}) {
+function makeMat(color, roughness = 0.55, extra = {}) {
   return new THREE.MeshStandardMaterial({
     color,
     roughness,
@@ -202,668 +256,259 @@ function makeMat(color, roughness = 0.65, extra = {}) {
   });
 }
 
-function makeBasic(color) {
-  return new THREE.MeshBasicMaterial({ color });
-}
-
-function addBuildingCrown(group, crown, yEdge, isBottom, mats) {
+function buildColumnCapital(group, style, yEdge, isBottom, mats) {
   const dir = isBottom ? 1 : -1;
 
-  // Cornisa principal en el borde del hueco
-  const cornice = new THREE.Mesh(new THREE.BoxGeometry(2.46, 0.36, 2.46), mats.roof);
-  cornice.position.y = yEdge - dir * 0.18;
-  group.add(cornice);
+  // 1. Ábaco superior (losa cuadrada que marca con precisión el límite del hueco)
+  const abacus = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.24, 2.26), mats.capital);
+  abacus.position.y = yEdge - dir * 0.12;
+  abacus.castShadow = true;
+  group.add(abacus);
 
-  const trimBand = new THREE.Mesh(new THREE.BoxGeometry(2.38, 0.22, 2.38), mats.trim);
-  trimBand.position.y = yEdge - dir * 0.44;
-  group.add(trimBand);
+  const abacusTrim = new THREE.Mesh(new THREE.BoxGeometry(2.34, 0.1, 2.34), mats.accent);
+  abacusTrim.position.y = yEdge - dir * 0.26;
+  group.add(abacusTrim);
 
-  if (crown === 'gothic' || crown === 'georgian_castle') {
-    // Pináculos o almenas en las 4 esquinas
-    [-0.95, 0.95].forEach((cx) => {
-      [-0.95, 0.95].forEach((cz) => {
-        const pin = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.42, 0.38), mats.trim);
-        pin.position.set(cx, yEdge - dir * 0.12, cz);
-        group.add(pin);
+  // 2. Cuerpo del capitel según el estilo arquitectónico de la ciudad
+  const capStyle = style.capitalStyle;
+  if (capStyle === 'ionic_volutes') {
+    const echinus = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        isBottom ? 1.08 : 0.86,
+        isBottom ? 0.86 : 1.08,
+        0.44,
+        style.shaftSides
+      ),
+      mats.shaft
+    );
+    echinus.position.y = yEdge - dir * 0.52;
+    group.add(echinus);
+
+    // Volutas jónicas laterales
+    [-0.92, 0.92].forEach((vx) => {
+      const volute = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.28, 0.28, 1.88, 10),
+        mats.accent
+      );
+      volute.rotation.x = Math.PI / 2;
+      volute.position.set(vx, yEdge - dir * 0.38, 0);
+      group.add(volute);
+    });
+  } else if (capStyle === 'lotus_bell') {
+    // Capitel campaniforme egipcio (flor de loto/papiro abierta)
+    const bell = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        isBottom ? 1.18 : 0.78,
+        isBottom ? 0.78 : 1.18,
+        0.65,
+        12
+      ),
+      mats.capital
+    );
+    bell.position.y = yEdge - dir * 0.58;
+    const goldBand = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.92, 0.92, 0.16, 12),
+      mats.accent
+    );
+    goldBand.position.y = yEdge - dir * 0.86;
+    group.add(bell, goldBand);
+  } else if (capStyle === 'muqarnas_bulb') {
+    // Capitel bulboso islámico / indo-sarraceno
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.96, 10, 8), mats.accent);
+    bulb.scale.set(1.05, 0.65, 1.05);
+    bulb.position.y = yEdge - dir * 0.55;
+    const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.18, 10), mats.flute);
+    collar.position.y = yEdge - dir * 0.88;
+    group.add(bulb, collar);
+  } else if (capStyle === 'oriental_bracket') {
+    // Capitel escalonado de ménsulas orientales (kumimono / templo)
+    const step1 = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.22, 2.05), mats.flute);
+    step1.position.y = yEdge - dir * 0.4;
+    const step2 = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.24, 1.75), mats.accent);
+    step2.position.y = yEdge - dir * 0.62;
+    const step3 = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.2, 1.48), mats.capital);
+    step3.position.y = yEdge - dir * 0.82;
+    group.add(step1, step2, step3);
+  } else if (capStyle === 'gothic_crown' || capStyle === 'art_deco_stepped') {
+    // Capitel octogonal escalonado con relieves en las esquinas
+    const crown = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        isBottom ? 1.12 : 0.85,
+        isBottom ? 0.85 : 1.12,
+        0.58,
+        8
+      ),
+      mats.flute
+    );
+    crown.position.y = yEdge - dir * 0.56;
+    group.add(crown);
+
+    [-0.85, 0.85].forEach((cx) => {
+      [-0.85, 0.85].forEach((cz) => {
+        const spur = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.48, 0.32), mats.accent);
+        spur.position.set(cx, yEdge - dir * 0.48, cz);
+        group.add(spur);
       });
     });
-  } else if (crown === 'mansard' || crown === 'colonial_fort' || crown === 'victorian_bay') {
-    const mansard = new THREE.Mesh(new THREE.CylinderGeometry(1.38, 1.72, 0.65, 4), mats.roof);
-    mansard.rotation.y = Math.PI / 4;
-    if (!isBottom) mansard.rotation.x = Math.PI;
-    mansard.position.y = yEdge - dir * 0.34;
-    group.add(mansard);
-  } else if (crown === 'hellenic' || crown === 'roman') {
-    // Frontón clásico y pilastras
-    const pediment = new THREE.Mesh(new THREE.ConeGeometry(1.55, 0.62, 4), mats.secondary);
-    pediment.rotation.y = Math.PI / 4;
-    if (!isBottom) pediment.rotation.x = Math.PI;
-    pediment.position.y = yEdge - dir * 0.32;
-    group.add(pediment);
-  } else if (
-    crown === 'abbasid' ||
-    crown === 'indo_saracenic' ||
-    crown === 'neoclassical_dome'
-  ) {
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.85, 10, 8), mats.trim);
-    dome.position.y = yEdge - dir * 0.35;
-    group.add(dome);
-  } else if (crown === 'thai_pagoda' || crown === 'japanese_pagoda') {
-    const eave1 = new THREE.Mesh(new THREE.ConeGeometry(1.78, 0.55, 4), mats.roof);
-    eave1.rotation.y = Math.PI / 4;
-    if (!isBottom) eave1.rotation.x = Math.PI;
-    eave1.position.y = yEdge - dir * 0.3;
-    const eave2 = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.18, 2.55), mats.trim);
-    eave2.position.y = yEdge - dir * 0.12;
-    group.add(eave1, eave2);
+  } else if (capStyle === 'iron_belle_epoque') {
+    // Capitel de celosía de hierro con arcos decorativos
+    const ironCap = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        isBottom ? 1.15 : 0.82,
+        isBottom ? 0.82 : 1.15,
+        0.58,
+        8
+      ),
+      mats.flute
+    );
+    ironCap.position.y = yEdge - dir * 0.56;
+    const rivetBelt = new THREE.Mesh(new THREE.BoxGeometry(2.12, 0.16, 2.12), mats.accent);
+    rivetBelt.position.y = yEdge - dir * 0.42;
+    group.add(ironCap, rivetBelt);
+  } else if (capStyle === 'glacial_basalt') {
+    // Capitel de prismas hexagonales escalonados
+    const hex1 = new THREE.Mesh(new THREE.CylinderGeometry(1.08, 1.08, 0.3, 6), mats.flute);
+    hex1.position.y = yEdge - dir * 0.42;
+    const hex2 = new THREE.Mesh(new THREE.CylinderGeometry(0.94, 0.94, 0.3, 6), mats.accent);
+    hex2.position.y = yEdge - dir * 0.7;
+    group.add(hex1, hex2);
+  } else {
+    // Corinthian / Beacon crown
+    const bell = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        isBottom ? 1.12 : 0.82,
+        isBottom ? 0.82 : 1.12,
+        0.6,
+        style.shaftSides
+      ),
+      mats.capital
+    );
+    bell.position.y = yEdge - dir * 0.56;
+    group.add(bell);
   }
+
+  // 3. Collarino (anillo astrágalo entre el fuste y el capitel)
+  const astragal = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.95, 0.95, 0.16, style.shaftSides),
+    mats.accent
+  );
+  astragal.position.y = yEdge - dir * 0.94;
+  group.add(astragal);
 }
 
-function buildCityBuildingObstacle(cityId, gapY, gapHeight) {
-  const style = CITY_STYLES[cityId] || CITY_STYLES.london;
-  const root = new THREE.Group();
+function buildHalfColumn(cityId, isBottom, gapY, gapHeight) {
+  const style = COLUMN_STYLES[cityId] || COLUMN_STYLES.london;
+  const subGroup = new THREE.Group();
 
   const mats = {
-    wall: makeMat(style.wallHex, 0.6),
-    secondary: makeMat(style.secondaryHex, 0.65),
-    roof: makeMat(style.roofHex, 0.7),
-    trim: makeMat(style.trimHex, 0.45),
-    window: makeBasic(style.windowHex)
+    shaft: makeMat(style.shaftHex, 0.55),
+    flute: makeMat(style.fluteHex, 0.6),
+    capital: makeMat(style.capitalHex, 0.5),
+    accent: makeMat(style.accentHex, 0.38, { metalness: 0.3 })
   };
 
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const topH = 18;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
+  const yEdge = isBottom ? gapY - gapHeight * 0.5 : gapY + gapHeight * 0.5;
+  const totalH = isBottom
+    ? Math.max(2.2, yEdge - (CONFIG.floorY - 1.2))
+    : 18;
+  const shaftH = Math.max(1.2, totalH - 1.0);
+  const dir = isBottom ? 1 : -1;
 
-  // Edificio inferior
-  const botTower = new THREE.Mesh(new THREE.BoxGeometry(2.2, botH, 2.2), mats.wall);
-  botTower.position.y = botTopY - botH * 0.5;
-  botTower.castShadow = true;
-  botTower.receiveShadow = true;
-  root.add(botTower);
+  // Fuste principal de la columna
+  const shaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.84, 0.9, shaftH, style.shaftSides),
+    mats.shaft
+  );
+  const shaftCenterY = yEdge - dir * (1.0 + shaftH * 0.5);
+  shaft.position.y = shaftCenterY;
+  shaft.castShadow = true;
+  shaft.receiveShadow = true;
+  subGroup.add(shaft);
 
-  // Pilastras / esquinas arquitectónicas del edificio inferior
-  [-0.96, 0.96].forEach((px) => {
-    const pilaster = new THREE.Mesh(
-      new THREE.BoxGeometry(0.28, Math.max(1, botH - 0.5), 2.28),
-      mats.secondary
+  // Estrías verticales (fluting) o nervios arquitectónicos en el fuste
+  const ribs = style.shaftSides >= 10 ? 6 : 4;
+  for (let i = 0; i < ribs; i++) {
+    const angle = (i / ribs) * Math.PI * 2;
+    const rib = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, Math.max(0.8, shaftH - 0.3), 0.18),
+      mats.flute
     );
-    pilaster.position.set(px, botTopY - botH * 0.5, 0);
-    root.add(pilaster);
-  });
+    rib.position.set(Math.cos(angle) * 0.82, shaftCenterY, Math.sin(angle) * 0.82);
+    rib.rotation.y = -angle;
+    subGroup.add(rib);
+  }
 
-  addBuildingCrown(root, style.crown, botTopY, true, mats);
-
-  // Ventanas y balcones del edificio inferior
-  for (let row = 1; row <= 6; row++) {
-    const winY = botTopY - 0.4 - row * 1.35;
-    if (winY < CONFIG.floorY + 0.4) break;
-    for (let col = -1; col <= 1; col += 2) {
-      const win = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.55), mats.window);
-      win.position.set(col * 0.42, winY, 1.13);
-      root.add(win);
+  // Anillos, tambores o bandas decorativas a lo largo del fuste según la ciudad
+  const ringStep = 1.65;
+  const maxRings = Math.min(7, Math.floor(shaftH / ringStep));
+  for (let r = 1; r <= maxRings; r++) {
+    const ry = yEdge - dir * (1.0 + r * ringStep);
+    if (style.ringStyle === 'spiral') {
+      const band = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.96, 0.96, 0.24, style.shaftSides),
+        r % 2 === 0 ? mats.accent : mats.flute
+      );
+      band.position.y = ry;
+      band.rotation.z = (r % 2 === 0 ? 1 : -1) * 0.18;
+      subGroup.add(band);
+    } else if (style.ringStyle === 'hieroglyph') {
+      const drum1 = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.95, 0.95, 0.28, style.shaftSides),
+        mats.flute
+      );
+      drum1.position.y = ry;
+      const drum2 = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.98, 0.98, 0.12, style.shaftSides),
+        mats.accent
+      );
+      drum2.position.y = ry + dir * 0.2;
+      subGroup.add(drum1, drum2);
+    } else if (style.ringStyle === 'lattice') {
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.22, 1.92), mats.flute);
+      frame.position.y = ry;
+      const dot = new THREE.Mesh(new THREE.BoxGeometry(1.98, 0.1, 1.98), mats.accent);
+      dot.position.y = ry;
+      subGroup.add(frame, dot);
+    } else if (style.ringStyle === 'pagoda_brackets') {
+      const collar = new THREE.Mesh(new THREE.BoxGeometry(2.02, 0.2, 2.02), mats.accent);
+      collar.position.y = ry;
+      const eave = new THREE.Mesh(new THREE.BoxGeometry(2.18, 0.14, 2.18), mats.capital);
+      eave.position.y = ry - dir * 0.14;
+      subGroup.add(collar, eave);
+    } else if (style.ringStyle === 'glacial') {
+      const prism = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 0.92, 0.45, 6), mats.accent);
+      prism.position.y = ry;
+      subGroup.add(prism);
+    } else {
+      const ring = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.95, 0.95, 0.2, style.shaftSides),
+        r % 2 === 0 ? mats.accent : mats.capital
+      );
+      ring.position.y = ry;
+      subGroup.add(ring);
     }
-    if (row % 2 === 1) {
-      const ledge = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.12, 0.18), mats.trim);
-      ledge.position.set(0, winY - 0.3, 1.16);
-      root.add(ledge);
+  }
+
+  // Basa / pedestal en el suelo para la columna inferior
+  if (isBottom) {
+    const plinthY = CONFIG.floorY + 0.35;
+    if (yEdge - plinthY > 1.3) {
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.65, 2.25), mats.capital);
+      plinth.position.y = plinthY;
+      const torusBase = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.06, 1.14, 0.35, style.shaftSides),
+        mats.accent
+      );
+      torusBase.position.y = plinthY + 0.45;
+      subGroup.add(plinth, torusBase);
     }
   }
 
-  // Edificio / estructura arquitectónica superior
-  const topTower = new THREE.Mesh(new THREE.BoxGeometry(2.2, topH, 2.2), mats.wall);
-  topTower.position.y = topBottomY + topH * 0.5;
-  topTower.castShadow = true;
-  root.add(topTower);
+  // Capitel y ábaco junto al hueco
+  buildColumnCapital(subGroup, style, yEdge, isBottom, mats);
 
-  [-0.96, 0.96].forEach((px) => {
-    const pilaster = new THREE.Mesh(new THREE.BoxGeometry(0.28, topH - 0.5, 2.28), mats.secondary);
-    pilaster.position.set(px, topBottomY + topH * 0.5, 0);
-    root.add(pilaster);
-  });
-
-  addBuildingCrown(root, style.crown, topBottomY, false, mats);
-
-  for (let row = 1; row <= 4; row++) {
-    const winY = topBottomY + 0.4 + row * 1.35;
-    for (let col = -1; col <= 1; col += 2) {
-      const win = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.55), mats.window);
-      win.position.set(col * 0.42, winY, 1.13);
-      root.add(win);
-    }
-  }
-
-  return { root, halfWidth: 1.15 };
+  return subGroup;
 }
-
-function buildGiantTreesObstacle(gapY, gapHeight) {
-  const root = new THREE.Group();
-  const trunkMat = makeMat(0x78350f, 0.88);
-  const darkLeafMat = makeMat(0x15803d, 0.68);
-  const brightLeafMat = makeMat(0x22c55e, 0.65);
-
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
-
-  // Árbol gigante inferior: tronco robusto + copa frondosa escalonada hasta botTopY
-  const trunkH = Math.max(1.2, botH - 1.8);
-  const botTrunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.68, 0.98, trunkH, 7),
-    trunkMat
-  );
-  botTrunk.position.y = botTopY - 1.8 - trunkH * 0.5;
-  botTrunk.castShadow = true;
-  root.add(botTrunk);
-
-  const crownLow = new THREE.Mesh(new THREE.ConeGeometry(1.42, 1.5, 7), darkLeafMat);
-  crownLow.position.y = botTopY - 1.25;
-  crownLow.castShadow = true;
-  const crownMid = new THREE.Mesh(new THREE.ConeGeometry(1.25, 1.3, 7), brightLeafMat);
-  crownMid.position.y = botTopY - 0.72;
-  crownMid.castShadow = true;
-  const crownTop = new THREE.Mesh(new THREE.DodecahedronGeometry(0.95, 0), brightLeafMat);
-  crownTop.scale.set(1.2, 0.72, 1.15);
-  crownTop.position.y = botTopY - 0.35;
-  root.add(crownLow, crownMid, crownTop);
-
-  // Dosel arbóreo gigante superior
-  const topH = 16;
-  const topTrunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.85, 0.68, topH, 7),
-    trunkMat
-  );
-  topTrunk.position.y = topBottomY + 1.5 + topH * 0.5;
-  root.add(topTrunk);
-
-  const canopyEdge = new THREE.Mesh(new THREE.DodecahedronGeometry(1.1, 0), brightLeafMat);
-  canopyEdge.scale.set(1.18, 0.75, 1.15);
-  canopyEdge.position.y = topBottomY + 0.42;
-  const canopyUpper = new THREE.Mesh(new THREE.CylinderGeometry(1.38, 1.2, 1.6, 7), darkLeafMat);
-  canopyUpper.position.y = topBottomY + 1.35;
-  root.add(canopyEdge, canopyUpper);
-
-  return { root, halfWidth: 1.15 };
-}
-
-function buildOceanWavesObstacle(gapY, gapHeight) {
-  const root = new THREE.Group();
-  const deepWaterMat = makeMat(0x0369a1, 0.42);
-  const midWaterMat = makeMat(0x0ea5e9, 0.38);
-  const foamMat = makeMat(0xf8fafc, 0.5);
-
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
-
-  // Gran columna de ola marina inferior con cresta de espuma blanca en botTopY
-  const waveColumn = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.05, 1.38, botH - 0.5, 8),
-    deepWaterMat
-  );
-  waveColumn.position.y = botTopY - 0.5 - (botH - 0.5) * 0.5;
-  root.add(waveColumn);
-
-  const waveSurge = new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.08, 1.1, 8), midWaterMat);
-  waveSurge.position.y = botTopY - 0.65;
-  root.add(waveSurge);
-
-  for (let i = -1; i <= 1; i++) {
-    const foamPuff = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 0), foamMat);
-    foamPuff.position.set(i * 0.48, botTopY - 0.25, (i % 2) * 0.2);
-    root.add(foamPuff);
-  }
-
-  // Tromba / ola gigante superior con espuma marina en topBottomY
-  const topH = 17;
-  const topColumn = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.35, 1.05, topH, 8),
-    deepWaterMat
-  );
-  topColumn.position.y = topBottomY + 0.5 + topH * 0.5;
-  const topSurge = new THREE.Mesh(new THREE.CylinderGeometry(1.08, 1.22, 1.1, 8), midWaterMat);
-  topSurge.position.y = topBottomY + 0.65;
-  root.add(topColumn, topSurge);
-
-  for (let i = -1; i <= 1; i++) {
-    const foamPuff = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 0), foamMat);
-    foamPuff.position.set(i * 0.48, topBottomY + 0.25, (i % 2) * 0.2);
-    root.add(foamPuff);
-  }
-
-  return { root, halfWidth: 1.15 };
-}
-
-function buildAlpinePeaksObstacle(gapY, gapHeight) {
-  const root = new THREE.Group();
-  const rockMat = makeMat(0x475569, 0.88);
-  const snowMat = makeMat(0xf8fafc, 0.5);
-
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
-
-  // Montaña escarpada inferior con cumbre nevada en botTopY
-  const rockH = Math.max(1.2, botH - 1.3);
-  const botRock = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.08, 1.48, rockH, 6),
-    rockMat
-  );
-  botRock.position.y = botTopY - 1.3 - rockH * 0.5;
-  const botSnow = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.95, 1.15, 1.3, 6),
-    snowMat
-  );
-  botSnow.position.y = botTopY - 0.65;
-  root.add(botRock, botSnow);
-
-  // Risco de montaña superior con cornisa de nieve en topBottomY
-  const topH = 17;
-  const topRock = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.48, 1.08, topH, 6),
-    rockMat
-  );
-  topRock.position.y = topBottomY + 1.2 + topH * 0.5;
-  const topSnow = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.15, 0.95, 1.2, 6),
-    snowMat
-  );
-  topSnow.position.y = topBottomY + 0.6;
-  root.add(topRock, topSnow);
-
-  return { root, halfWidth: 1.15 };
-}
-
-function buildMedIslandsRuinsObstacle(gapY, gapHeight) {
-  const root = new THREE.Group();
-  const cliffMat = makeMat(0xd6d3d1, 0.82);
-  const marbleMat = makeMat(0xf8fafc, 0.48);
-  const blueMat = makeMat(0x0284c7, 0.45);
-
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
-
-  // Peñón mediterráneo inferior coronado por columnas clásicas y cúpula azul
-  const cliffH = Math.max(1.2, botH - 1.4);
-  const botCliff = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.12, 1.35, cliffH, 7),
-    cliffMat
-  );
-  botCliff.position.y = botTopY - 1.4 - cliffH * 0.5;
-  root.add(botCliff);
-
-  [-0.55, 0, 0.55].forEach((cx) => {
-    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 1.1, 8), marbleMat);
-    col.position.set(cx, botTopY - 0.85, 0.45);
-    root.add(col);
-  });
-
-  const lintel = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.35, 2.1), marbleMat);
-  lintel.position.y = botTopY - 0.18;
-  const blueTrim = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.2, 1.9), blueMat);
-  blueTrim.position.y = botTopY - 0.42;
-  root.add(lintel, blueTrim);
-
-  // Arco rocoso y columnata clásica superior
-  const topH = 17;
-  const topCliff = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.35, 1.12, topH, 7),
-    cliffMat
-  );
-  topCliff.position.y = topBottomY + 0.6 + topH * 0.5;
-  const topLintel = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.38, 2.1), marbleMat);
-  topLintel.position.y = topBottomY + 0.19;
-  const topBlue = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.22, 1.95), blueMat);
-  topBlue.position.y = topBottomY + 0.46;
-  root.add(topCliff, topLintel, topBlue);
-
-  return { root, halfWidth: 1.15 };
-}
-
-function buildDesertPyramidsObstacle(gapY, gapHeight) {
-  const root = new THREE.Group();
-  const sandMat = makeMat(0xd97706, 0.78);
-  const darkSandMat = makeMat(0xb45309, 0.82);
-  const goldMat = makeMat(0xfacc15, 0.32, { metalness: 0.45 });
-  const turquoiseMat = makeMat(0x06b6d4, 0.45);
-
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
-
-  // Pirámide escalonada / obelisco egipcio inferior con piramidión dorado en botTopY
-  const baseH = Math.max(1.2, botH - 1.1);
-  const botShaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.15, 1.55, baseH, 4),
-    sandMat
-  );
-  botShaft.rotation.y = Math.PI / 4;
-  botShaft.position.y = botTopY - 1.1 - baseH * 0.5;
-
-  const stepMid = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.55, 2.15), darkSandMat);
-  stepMid.position.y = botTopY - 0.82;
-  const frieze = new THREE.Mesh(new THREE.BoxGeometry(2.22, 0.22, 2.22), turquoiseMat);
-  frieze.position.y = botTopY - 0.45;
-  const goldCap = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.34, 2.3), goldMat);
-  goldCap.position.y = botTopY - 0.17;
-  root.add(botShaft, stepMid, frieze, goldCap);
-
-  // Pilono faraónico superior
-  const topH = 17;
-  const topShaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.55, 1.15, topH, 4),
-    sandMat
-  );
-  topShaft.rotation.y = Math.PI / 4;
-  topShaft.position.y = topBottomY + 0.6 + topH * 0.5;
-  const topGold = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.34, 2.3), goldMat);
-  topGold.position.y = topBottomY + 0.17;
-  const topTurquoise = new THREE.Mesh(new THREE.BoxGeometry(2.22, 0.22, 2.22), turquoiseMat);
-  topTurquoise.position.y = topBottomY + 0.45;
-  root.add(topShaft, topGold, topTurquoise);
-
-  return { root, halfWidth: 1.15 };
-}
-
-function buildCanyonArchesObstacle(gapY, gapHeight) {
-  const root = new THREE.Group();
-  const redRockMat = makeMat(0x9a3412, 0.85);
-  const terracottaMat = makeMat(0xc2410c, 0.82);
-  const ochreMat = makeMat(0xd97706, 0.78);
-
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
-
-  // Pilar de cañón estratificado inferior (mesa de roca rojiza)
-  const col = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.1, 1.35, botH - 0.4, 6),
-    redRockMat
-  );
-  col.position.y = botTopY - 0.4 - (botH - 0.4) * 0.5;
-  const band = new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.22, 0.6, 6), ochreMat);
-  band.position.y = botTopY - 1.1;
-  const mesaCap = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.42, 2.35), terracottaMat);
-  mesaCap.position.y = botTopY - 0.21;
-  root.add(col, band, mesaCap);
-
-  // Saliente de cañón superior
-  const topH = 17;
-  const topCol = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.35, 1.1, topH, 6),
-    redRockMat
-  );
-  topCol.position.y = topBottomY + 0.4 + topH * 0.5;
-  const topCap = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.42, 2.35), terracottaMat);
-  topCap.position.y = topBottomY + 0.21;
-  const topBand = new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.22, 0.6, 6), ochreMat);
-  topBand.position.y = topBottomY + 1.05;
-  root.add(topCol, topCap, topBand);
-
-  return { root, halfWidth: 1.15 };
-}
-
-function buildJungleTemplesObstacle(gapY, gapHeight) {
-  const root = new THREE.Group();
-  const stoneMat = makeMat(0x047857, 0.75);
-  const goldMat = makeMat(0xfacc15, 0.32, { metalness: 0.45 });
-  const vineMat = makeMat(0x16a34a, 0.7);
-
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
-
-  // Templo escalonado de la selva inferior con vegetación y remate dorado
-  const body = new THREE.Mesh(new THREE.BoxGeometry(2.15, botH - 0.4, 2.15), stoneMat);
-  body.position.y = botTopY - 0.4 - (botH - 0.4) * 0.5;
-  const goldTier = new THREE.Mesh(new THREE.BoxGeometry(2.38, 0.42, 2.38), goldMat);
-  goldTier.position.y = botTopY - 0.21;
-  const vineBand = new THREE.Mesh(new THREE.BoxGeometry(2.28, 0.45, 2.28), vineMat);
-  vineBand.position.y = botTopY - 0.75;
-  root.add(body, goldTier, vineBand);
-
-  // Dosel de selva y templo superior
-  const topH = 17;
-  const topBody = new THREE.Mesh(new THREE.BoxGeometry(2.15, topH, 2.15), stoneMat);
-  topBody.position.y = topBottomY + 0.4 + topH * 0.5;
-  const topGold = new THREE.Mesh(new THREE.BoxGeometry(2.38, 0.42, 2.38), goldMat);
-  topGold.position.y = topBottomY + 0.21;
-  const topVine = new THREE.Mesh(new THREE.BoxGeometry(2.28, 0.45, 2.28), vineMat);
-  topVine.position.y = topBottomY + 0.75;
-  root.add(topBody, topGold, topVine);
-
-  return { root, halfWidth: 1.15 };
-}
-
-function buildVolcanicSpiresObstacle(gapY, gapHeight) {
-  const root = new THREE.Group();
-  const basaltMat = makeMat(0x1e293b, 0.9);
-  const lavaMat = makeBasic(0xf97316);
-  const ashMat = makeMat(0x475569, 0.78);
-
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
-
-  // Columna volcánica de basalto inferior con borde incandescente de lava en botTopY
-  const cone = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.08, 1.48, botH - 0.35, 7),
-    basaltMat
-  );
-  cone.position.y = botTopY - 0.35 - (botH - 0.35) * 0.5;
-  const lavaRim = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.15, 1.15, 0.35, 7),
-    lavaMat
-  );
-  lavaRim.position.y = botTopY - 0.18;
-  root.add(cone, lavaRim);
-
-  // Columna de roca basáltica y nube volcánica superior
-  const topH = 17;
-  const topBasalt = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.42, 1.08, topH, 7),
-    basaltMat
-  );
-  topBasalt.position.y = topBottomY + 0.35 + topH * 0.5;
-  const topLava = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.15, 1.15, 0.35, 7),
-    lavaMat
-  );
-  topLava.position.y = topBottomY + 0.18;
-  const ashCloud = new THREE.Mesh(new THREE.DodecahedronGeometry(1.18, 0), ashMat);
-  ashCloud.position.y = topBottomY + 1.05;
-  root.add(topBasalt, topLava, ashCloud);
-
-  return { root, halfWidth: 1.15 };
-}
-
-function buildSakuraPagodasObstacle(gapY, gapHeight) {
-  const root = new THREE.Group();
-  const trunkMat = makeMat(0x5c3a21, 0.85);
-  const sakuraMat = makeMat(0xf472b6, 0.55);
-  const vermilionMat = makeMat(0xef4444, 0.5);
-  const slateMat = makeMat(0x1e293b, 0.65);
-
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
-
-  // Pilar japonés inferior con flores de cerezo y alero de pagoda
-  const botPillar = new THREE.Mesh(new THREE.BoxGeometry(2.05, botH - 0.5, 2.05), trunkMat);
-  botPillar.position.y = botTopY - 0.5 - (botH - 0.5) * 0.5;
-  const botBeam = new THREE.Mesh(new THREE.BoxGeometry(2.38, 0.28, 2.38), vermilionMat);
-  botBeam.position.y = botTopY - 0.45;
-  const botRoof = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.28, 2.45), slateMat);
-  botRoof.position.y = botTopY - 0.15;
-  const blossom = new THREE.Mesh(new THREE.DodecahedronGeometry(0.95, 0), sakuraMat);
-  blossom.scale.set(1.2, 0.65, 1.2);
-  blossom.position.y = botTopY - 0.9;
-  root.add(botPillar, botBeam, botRoof, blossom);
-
-  // Dosel de cerezo en flor y viga Torii superior
-  const topH = 17;
-  const topPillar = new THREE.Mesh(new THREE.BoxGeometry(2.05, topH, 2.05), trunkMat);
-  topPillar.position.y = topBottomY + 0.5 + topH * 0.5;
-  const topRoof = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.28, 2.45), vermilionMat);
-  topRoof.position.y = topBottomY + 0.15;
-  const topBlossom = new THREE.Mesh(new THREE.DodecahedronGeometry(1.05, 0), sakuraMat);
-  topBlossom.scale.set(1.2, 0.65, 1.2);
-  topBlossom.position.y = topBottomY + 0.75;
-  root.add(topPillar, topRoof, topBlossom);
-
-  return { root, halfWidth: 1.15 };
-}
-
-function buildCoralAtollsObstacle(gapY, gapHeight) {
-  const root = new THREE.Group();
-  const coralStoneMat = makeMat(0xfde68a, 0.78);
-  const turquoiseMat = makeMat(0x06b6d4, 0.4);
-  const greenPalmMat = makeMat(0x16a34a, 0.65);
-
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
-
-  const botCol = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.12, 1.38, botH - 0.5, 7),
-    coralStoneMat
-  );
-  botCol.position.y = botTopY - 0.5 - (botH - 0.5) * 0.5;
-  const reefRing = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.22, 0.4, 7), turquoiseMat);
-  reefRing.position.y = botTopY - 0.55;
-  const crown = new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.28, 0.35, 7), greenPalmMat);
-  crown.position.y = botTopY - 0.18;
-  root.add(botCol, reefRing, crown);
-
-  const topH = 17;
-  const topCol = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.38, 1.12, topH, 7),
-    coralStoneMat
-  );
-  topCol.position.y = topBottomY + 0.4 + topH * 0.5;
-  const topTurquoise = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.25, 1.22, 0.4, 7),
-    turquoiseMat
-  );
-  topTurquoise.position.y = topBottomY + 0.2;
-  root.add(topCol, topTurquoise);
-
-  return { root, halfWidth: 1.15 };
-}
-
-function buildGoldenGateRedTowersObstacle(gapY, gapHeight) {
-  const root = new THREE.Group();
-  const redSteelMat = makeMat(0xdc2626, 0.45, { metalness: 0.3 });
-  const darkRedMat = makeMat(0x991b1b, 0.5);
-  const concreteMat = makeMat(0xcbd5e1, 0.75);
-
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
-
-  // Torre de puente colgante de acero rojo inferior
-  const botTower = new THREE.Mesh(new THREE.BoxGeometry(2.15, botH, 2.15), redSteelMat);
-  botTower.position.y = botTopY - botH * 0.5;
-  const botCross = new THREE.Mesh(new THREE.BoxGeometry(2.42, 0.42, 2.42), darkRedMat);
-  botCross.position.y = botTopY - 0.21;
-  const botPier = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.32, 2.35), concreteMat);
-  botPier.position.y = botTopY - 1.2;
-  root.add(botTower, botCross, botPier);
-
-  // Celosía de puente colgante de acero rojo superior
-  const topH = 17;
-  const topTower = new THREE.Mesh(new THREE.BoxGeometry(2.15, topH, 2.15), redSteelMat);
-  topTower.position.y = topBottomY + topH * 0.5;
-  const topCross = new THREE.Mesh(new THREE.BoxGeometry(2.42, 0.42, 2.42), darkRedMat);
-  topCross.position.y = topBottomY + 0.21;
-  root.add(topTower, topCross);
-
-  return { root, halfWidth: 1.15 };
-}
-
-function buildIcebergsGlaciersObstacle(gapY, gapHeight) {
-  const root = new THREE.Group();
-  const iceWhiteMat = makeMat(0xf8fafc, 0.35);
-  const iceCyanMat = makeMat(0x38bdf8, 0.3);
-
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
-
-  // Iceberg / glaciar cristalino inferior
-  const botIce = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.08, 1.45, botH - 0.4, 6),
-    iceCyanMat
-  );
-  botIce.position.y = botTopY - 0.4 - (botH - 0.4) * 0.5;
-  const botCap = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.18, 1.12, 0.55, 6),
-    iceWhiteMat
-  );
-  botCap.position.y = botTopY - 0.27;
-  root.add(botIce, botCap);
-
-  // Glaciar colgante superior
-  const topH = 17;
-  const topIce = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.45, 1.08, topH, 6),
-    iceCyanMat
-  );
-  topIce.position.y = topBottomY + 0.4 + topH * 0.5;
-  const topCap = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.12, 1.18, 0.55, 6),
-    iceWhiteMat
-  );
-  topCap.position.y = topBottomY + 0.27;
-  root.add(topIce, topCap);
-
-  return { root, halfWidth: 1.15 };
-}
-
-function buildSeaCliffsObstacle(gapY, gapHeight) {
-  const root = new THREE.Group();
-  const slateMat = makeMat(0x334155, 0.88);
-  const emeraldMat = makeMat(0x16a34a, 0.65);
-
-  const topBottomY = gapY + gapHeight * 0.5;
-  const botTopY = gapY - gapHeight * 0.5;
-  const botH = Math.max(2.2, botTopY - (CONFIG.floorY - 1.2));
-
-  // Acantilado escarpado con manto de hierba esmeralda en botTopY
-  const cliff = new THREE.Mesh(new THREE.BoxGeometry(2.2, botH - 0.36, 2.2), slateMat);
-  cliff.position.y = botTopY - 0.36 - (botH - 0.36) * 0.5;
-  const grassTop = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.38, 2.36), emeraldMat);
-  grassTop.position.y = botTopY - 0.19;
-  root.add(cliff, grassTop);
-
-  // Acantilado superior
-  const topH = 17;
-  const topCliff = new THREE.Mesh(new THREE.BoxGeometry(2.2, topH, 2.2), slateMat);
-  topCliff.position.y = topBottomY + 0.36 + topH * 0.5;
-  const topEdge = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.38, 2.36), emeraldMat);
-  topEdge.position.y = topBottomY + 0.19;
-  root.add(topCliff, topEdge);
-
-  return { root, halfWidth: 1.15 };
-}
-
-const JOURNEY_BUILDERS = {
-  giant_trees: buildGiantTreesObstacle,
-  ocean_waves: buildOceanWavesObstacle,
-  alpine_peaks: buildAlpinePeaksObstacle,
-  med_islands_ruins: buildMedIslandsRuinsObstacle,
-  desert_pyramids: buildDesertPyramidsObstacle,
-  canyon_arches: buildCanyonArchesObstacle,
-  jungle_temples: buildJungleTemplesObstacle,
-  volcanic_spires: buildVolcanicSpiresObstacle,
-  sakura_pagodas: buildSakuraPagodasObstacle,
-  coral_atolls: buildCoralAtollsObstacle,
-  golden_gate_red_towers: buildGoldenGateRedTowersObstacle,
-  icebergs_glaciers: buildIcebergsGlaciersObstacle,
-  sea_cliffs: buildSeaCliffsObstacle
-};
 
 export function createObstacleSystem(scene) {
   const group = new THREE.Group();
@@ -878,27 +523,27 @@ export function createObstacleSystem(scene) {
     const gapY = THREE.MathUtils.lerp(minGapY, maxGapY, Math.random());
 
     const resolved = resolveObstacleStyle(level, obstacleIndex);
-    let built;
-    if (resolved.category === 'city') {
-      built = buildCityBuildingObstacle(resolved.cityId, gapY, gapHeight);
-    } else {
-      const builder = JOURNEY_BUILDERS[resolved.style] || buildGiantTreesObstacle;
-      built = builder(gapY, gapHeight);
-    }
 
-    built.root.position.set(xPos, 0, 0);
-    group.add(built.root);
+    const root = new THREE.Group();
+    const bottomCol = buildHalfColumn(resolved.bottomCity, true, gapY, gapHeight);
+    const topCol = buildHalfColumn(resolved.topCity, false, gapY, gapHeight);
+    root.add(bottomCol, topCol);
 
-    // Todos los obstáculos son 100% fijos (sin movimiento vertical ni anillos)
+    root.position.set(xPos, 0, 0);
+    group.add(root);
+
     const obstacle = {
       type: resolved.role,
-      mesh: built.root,
+      phase: resolved.phase,
+      bottomCity: resolved.bottomCity,
+      topCity: resolved.topCity,
+      mesh: root,
       ringMesh: null,
       boltMesh: null,
       baseGapY: gapY,
       gapY,
       gapHeight,
-      halfWidth: built.halfWidth,
+      halfWidth: 1.15,
       passed: false,
       oscillates: false
     };

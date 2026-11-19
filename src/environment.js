@@ -13,14 +13,54 @@ const WATER_SURFACES = new Set([
   'north_atlantic'
 ]);
 
+const WATER_PROP_TYPES = new Set([
+  'ships',
+  'classic_steamer',
+  'sailboat_yacht',
+  'arabian_dhows',
+  'asian_junk',
+  'cargo_ships',
+  'fishing_trawler',
+  'channel_buoys',
+  'fog_buoys',
+  'med_islands',
+  'archipelago_islets',
+  'volcanic_islands',
+  'coral_atolls',
+  'icebergs',
+  'red_bridge_towers'
+]);
+
 export function createEnvironment(scene) {
   const envGroup = new THREE.Group();
   scene.add(envGroup);
 
   const sunMat = new THREE.MeshBasicMaterial({ color: 0xfde047 });
   const sunMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(5.5, 1), sunMat);
-  sunMesh.position.set(18, 12, -52);
+  sunMesh.position.set(18, 13, -52);
   envGroup.add(sunMesh);
+
+  // Estrellas 3D para la fase nocturna del ciclo día/atardecer/noche
+  const starsGroup = new THREE.Group();
+  const starMat = new THREE.MeshBasicMaterial({
+    color: 0xfef9c3,
+    transparent: true,
+    opacity: 0
+  });
+  const starGeo = new THREE.OctahedronGeometry(0.24, 0);
+  for (let i = 0; i < 36; i++) {
+    const star = new THREE.Mesh(starGeo, starMat);
+    star.position.set(
+      -42 + (i * 2.45) + (Math.random() - 0.5) * 1.5,
+      3.5 + (i % 7) * 2.3 + Math.random() * 1.2,
+      -42 - (i % 3) * 4
+    );
+    const s = 0.65 + (i % 4) * 0.25;
+    star.scale.setScalar(s);
+    starsGroup.add(star);
+  }
+  starsGroup.visible = false;
+  envGroup.add(starsGroup);
 
   // Monte Fuji monumental en el horizonte lejano (Nivel 11: Manila -> Tokio)
   const fujiGroup = new THREE.Group();
@@ -83,6 +123,7 @@ export function createEnvironment(scene) {
     return geometry;
   }
 
+  // Materiales exclusivos de TIERRA (nunca se tiñen de azul cuando llega una etapa de mar)
   const groundMatGrass = new THREE.MeshStandardMaterial({
     color: 0x22c55e,
     roughness: 0.65,
@@ -109,15 +150,56 @@ export function createEnvironment(scene) {
     flatShading: true
   });
 
+  // Materiales exclusivos de MAR / OCÉANO (llegan hasta abajo del todo en la pantalla)
+  const waterSurfaceMat = new THREE.MeshStandardMaterial({
+    color: 0x0284c7,
+    roughness: 0.3,
+    metalness: 0.15,
+    flatShading: true
+  });
+  const waterWaveMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    roughness: 0.35,
+    flatShading: true
+  });
+  const waterFoamMat = new THREE.MeshStandardMaterial({
+    color: 0xf0f9ff,
+    roughness: 0.45,
+    flatShading: true
+  });
+  const waterDepthMat = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.55,
+    flatShading: true
+  });
+
+  const fishMaterials = [
+    new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.4, flatShading: true }),
+    new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4, flatShading: true }),
+    new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.35, flatShading: true }),
+    new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.4, flatShading: true })
+  ];
+  const bubbleMat = new THREE.MeshBasicMaterial({
+    color: 0xe0f2fe,
+    transparent: true,
+    opacity: 0.65
+  });
+
   const targetTopColor = new THREE.Color(0x22c55e);
   const targetLipColor = new THREE.Color(0x16a34a);
   const targetSubColor = new THREE.Color(0x92400e);
+  const targetWaterSurfaceColor = new THREE.Color(0x0284c7);
+  const targetWaterWaveColor = new THREE.Color(0x38bdf8);
   const targetSunColor = new THREE.Color(0xfde047);
+  const targetCloudColor = new THREE.Color(0xffffff);
 
   let currentLevel = LEVELS[0];
   let currentStage = getStageForProgress(currentLevel, 0);
   let waveTime = 0;
+  let targetSunY = 13;
+  let targetStarOpacity = 0;
 
+  // Geometrías de estratos de TIERRA
   const soilGeo = applyVerticalGradient(
     new THREE.BoxGeometry(groundChunkWidth, 2.0, 13.2),
     0x9c6236,
@@ -134,23 +216,70 @@ export function createEnvironment(scene) {
     0x0c0a09
   );
 
-  function populateChunkProps(chunk, stage) {
+  // Geometrías de profundidad de MAR (agua continua hasta el borde inferior de la pantalla)
+  const waterMidGeo = applyVerticalGradient(
+    new THREE.BoxGeometry(groundChunkWidth, 6.5, 13.4),
+    0x0284c7,
+    0x075985
+  );
+  const waterAbyssGeo = applyVerticalGradient(
+    new THREE.BoxGeometry(groundChunkWidth, 19.0, 13.3),
+    0x075985,
+    0x020617
+  );
+
+  function createFishMesh(matIndex) {
+    const fishGroup = new THREE.Group();
+    const fMat = fishMaterials[matIndex % fishMaterials.length];
+
+    // Cuerpo fusiforme del pez
+    const body = new THREE.Mesh(new THREE.OctahedronGeometry(0.24, 0), fMat);
+    body.scale.set(1.75, 0.78, 0.55);
+    fishGroup.add(body);
+
+    // Aleta caudal (cola)
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.28, 3), fMat);
+    tail.rotation.z = -Math.PI / 2;
+    tail.position.set(0.42, 0, 0);
+    fishGroup.add(tail);
+
+    fishGroup.userData.tail = tail;
+    return fishGroup;
+  }
+
+  function populateChunkProps(chunk, stage, forceLand = false) {
     const propsGroup = chunk.userData.propsGroup;
     while (propsGroup.children.length > 0) {
       propsGroup.remove(propsGroup.children[0]);
     }
 
-    const propTypes = stage?.propTypes || ['english_trees'];
-    if (propTypes.length === 0) return;
+    const isWater = !forceLand && WATER_SURFACES.has(stage?.surface);
+    chunk.userData.isWater = isWater;
+    chunk.userData.landGroup.visible = !isWater;
+    chunk.userData.waterGroup.visible = isWater;
 
-    const count = 3;
+    const rawProps = stage?.propTypes || ['english_trees'];
+    const filteredProps = rawProps.filter((p) =>
+      isWater ? WATER_PROP_TYPES.has(p) : !WATER_PROP_TYPES.has(p)
+    );
+    const propTypes =
+      filteredProps.length > 0
+        ? filteredProps
+        : isWater
+          ? ['classic_steamer', 'sailboat_yacht']
+          : ['english_trees', 'cottage'];
+
+    const count = isWater ? 2 : 3;
     for (let i = 0; i < count; i++) {
-      const chosenType = propTypes[(i + Math.floor(Math.random() * propTypes.length)) % propTypes.length];
+      const chosenType =
+        propTypes[(i + Math.floor(Math.random() * propTypes.length)) % propTypes.length];
       const propMesh = createStageProp(chosenType);
-      const px = (i - 1) * 3.6 + (Math.random() - 0.5) * 1.1;
-      const pz = -2.3 - Math.random() * 1.3;
-      const scale = 0.85 + Math.random() * 0.35;
-      propMesh.position.set(px, 0, pz);
+      const px = isWater
+        ? (i - 0.5) * 5.2 + (Math.random() - 0.5) * 1.4
+        : (i - 1) * 3.6 + (Math.random() - 0.5) * 1.1;
+      const pz = isWater ? -1.8 - Math.random() * 2.2 : -2.3 - Math.random() * 1.3;
+      const scale = 0.85 + Math.random() * 0.32;
+      propMesh.position.set(px, isWater ? -0.1 : 0, pz);
       propMesh.scale.setScalar(scale);
       propsGroup.add(propMesh);
     }
@@ -160,50 +289,53 @@ export function createEnvironment(scene) {
     const chunk = new THREE.Group();
     chunk.position.set(xPos, CONFIG.floorY, 0);
 
+    // =========================================================================
+    // 1. SUBGRUPO DE TIERRA (Césped/Arena/Roca + Estratos subterráneos)
+    // =========================================================================
+    const landGroup = new THREE.Group();
+
     const grass = new THREE.Mesh(
       new THREE.BoxGeometry(groundChunkWidth, 0.7, 13.5),
       groundMatGrass
     );
     grass.position.set(0, -0.35, 1.5);
     grass.receiveShadow = true;
-    chunk.add(grass);
+    landGroup.add(grass);
 
     const lip = new THREE.Mesh(
       new THREE.BoxGeometry(groundChunkWidth, 0.34, 0.55),
       groundMatGrassLip
     );
     lip.position.set(0, -0.82, 8.3);
-    chunk.add(lip);
+    landGroup.add(lip);
 
-    const tuftList = [];
     const tufts = 5;
     for (let i = 0; i < tufts; i++) {
-      const tx = -groundChunkWidth * 0.5 + ((i + Math.random() * 0.7) / tufts) * groundChunkWidth;
+      const tx =
+        -groundChunkWidth * 0.5 + ((i + Math.random() * 0.7) / tufts) * groundChunkWidth;
       const tuft = new THREE.Mesh(
         new THREE.ConeGeometry(0.09, 0.28 + Math.random() * 0.18, 4),
         groundMatGrassLip
       );
       tuft.position.set(tx, 0.12, 7.85 + Math.random() * 0.3);
       tuft.rotation.z = (Math.random() - 0.5) * 0.35;
-      chunk.add(tuft);
-      tuftList.push(tuft);
+      landGroup.add(tuft);
     }
 
     const soil = new THREE.Mesh(soilGeo, groundMatSoil);
     soil.position.set(0, -1.7, 1.5);
     soil.receiveShadow = true;
-    chunk.add(soil);
+    landGroup.add(soil);
 
     const stone = new THREE.Mesh(stoneGeo, gradientMat);
     stone.position.set(0, -5.2, 1.5);
-    chunk.add(stone);
+    landGroup.add(stone);
 
     const deep = new THREE.Mesh(deepGeo, gradientMat);
     deep.position.set(0, -16.7, 1.5);
-    chunk.add(deep);
+    landGroup.add(deep);
 
-    const embeddedRocks = 2;
-    for (let i = 0; i < embeddedRocks; i++) {
+    for (let i = 0; i < 2; i++) {
       const rx = (i - 0.5) * 5 + (Math.random() - 0.5) * 2.2;
       const rock = new THREE.Mesh(
         new THREE.DodecahedronGeometry(0.55 + Math.random() * 0.35, 0),
@@ -213,7 +345,7 @@ export function createEnvironment(scene) {
       rock.scale.set(1.25, 0.85, 0.7);
       rock.rotation.set(Math.random() * 0.6, Math.random() * Math.PI, Math.random() * 0.6);
       rock.position.set(rx, ry, 8.0);
-      chunk.add(rock);
+      landGroup.add(rock);
     }
 
     for (let i = 0; i < 3; i++) {
@@ -226,15 +358,93 @@ export function createEnvironment(scene) {
         -1.0 - Math.random() * 1.4,
         8.12
       );
-      chunk.add(pebble);
+      landGroup.add(pebble);
     }
+
+    chunk.add(landGroup);
+
+    // =========================================================================
+    // 2. SUBGRUPO DE MAR / OCÉANO (Agua hasta abajo del todo + Olas + Peces)
+    // =========================================================================
+    const waterGroup = new THREE.Group();
+    waterGroup.visible = false;
+
+    // Capa superficial del mar
+    const surfaceWater = new THREE.Mesh(
+      new THREE.BoxGeometry(groundChunkWidth, 0.9, 13.5),
+      waterSurfaceMat
+    );
+    surfaceWater.position.set(0, -0.45, 1.5);
+    surfaceWater.receiveShadow = true;
+    waterGroup.add(surfaceWater);
+
+    // Columna de agua marina media y abisal (llega hasta abajo del todo sin rocas)
+    const midWater = new THREE.Mesh(waterMidGeo, waterDepthMat);
+    midWater.position.set(0, -4.15, 1.5);
+    waterGroup.add(midWater);
+
+    const abyssWater = new THREE.Mesh(waterAbyssGeo, waterDepthMat);
+    abyssWater.position.set(0, -16.9, 1.5);
+    waterGroup.add(abyssWater);
+
+    // Crestas de olas 3D y rodillos de espuma blanca sobre la superficie
+    const waveList = [];
+    for (let i = 0; i < 6; i++) {
+      const wx = -groundChunkWidth * 0.42 + (i / 5) * groundChunkWidth * 0.84;
+      const wz = -1.5 + (i % 3) * 3.8;
+      const waveRidge = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.22, 0.48, 2.2, 5),
+        i % 2 === 0 ? waterFoamMat : waterWaveMat
+      );
+      waveRidge.rotation.z = Math.PI / 2;
+      waveRidge.position.set(wx, 0.05, wz);
+      waterGroup.add(waveRidge);
+      waveList.push(waveRidge);
+    }
+
+    // Espuma blanca de las olas en el corte frontal del mar
+    const frontFoam = new THREE.Mesh(
+      new THREE.BoxGeometry(groundChunkWidth, 0.24, 0.48),
+      waterFoamMat
+    );
+    frontFoam.position.set(0, -0.08, 8.28);
+    waterGroup.add(frontFoam);
+
+    // Peces low-poly nadando bajo el agua y burbujas marinas
+    const fishList = [];
+    for (let i = 0; i < 4; i++) {
+      const fish = createFishMesh(i);
+      const baseX = -4.2 + i * 2.7 + (Math.random() - 0.5) * 0.8;
+      const baseY = -1.65 - (i % 3) * 1.45 - Math.random() * 0.5;
+      fish.position.set(baseX, baseY, 8.26);
+      fish.userData.baseX = baseX;
+      fish.userData.baseY = baseY;
+      fish.userData.phase = Math.random() * Math.PI * 2;
+      fish.userData.speed = 2.2 + Math.random() * 1.6;
+      waterGroup.add(fish);
+      fishList.push(fish);
+
+      const bubble = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.08 + (i % 2) * 0.04, 0),
+        bubbleMat
+      );
+      bubble.position.set(baseX - 0.45, baseY + 0.45, 8.3);
+      waterGroup.add(bubble);
+    }
+
+    chunk.add(waterGroup);
 
     const propsGroup = new THREE.Group();
     chunk.add(propsGroup);
-    chunk.userData.propsGroup = propsGroup;
-    chunk.userData.tufts = tuftList;
 
-    populateChunkProps(chunk, currentStage);
+    chunk.userData.landGroup = landGroup;
+    chunk.userData.waterGroup = waterGroup;
+    chunk.userData.propsGroup = propsGroup;
+    chunk.userData.waves = waveList;
+    chunk.userData.fishes = fishList;
+    chunk.userData.isWater = false;
+
+    populateChunkProps(chunk, currentStage, true);
 
     envGroup.add(chunk);
     return chunk;
@@ -294,12 +504,23 @@ export function createEnvironment(scene) {
     landmarkSlot.add(monument);
   }
 
+  function ensureLandUnderRunway() {
+    if (!runwayGroup.visible) return;
+    const rx = runwayGroup.position.x;
+    for (const chunk of groundChunks) {
+      if (Math.abs(chunk.position.x - rx) < 22 && chunk.userData.isWater) {
+        populateChunkProps(chunk, currentStage, true);
+      }
+    }
+  }
+
   function resetRunway(anchorX = -3.5, landmarkId = currentLevel?.originLandmark) {
     runwayGroup.position.x = anchorX + 4.5;
     runwayGroup.visible = true;
     if (landmarkId) {
       setRunwayLandmark(landmarkId);
     }
+    ensureLandUnderRunway();
   }
 
   // Capas de montañas / horizonte en parallax
@@ -394,9 +615,10 @@ export function createEnvironment(scene) {
     const showSnow = Boolean(stage.snowCaps);
 
     let heightFactor = 1.0;
-    if (stage.backdrop === 'open_sea') heightFactor = 0.25;
+    if (stage.backdrop === 'open_sea') heightFactor = 0.22;
     else if (stage.backdrop === 'island_chain') heightFactor = 0.55;
-    else if (stage.backdrop === 'rolling_hills' || stage.backdrop === 'desert_dunes') heightFactor = 0.72;
+    else if (stage.backdrop === 'rolling_hills' || stage.backdrop === 'desert_dunes')
+      heightFactor = 0.72;
     else if (stage.backdrop === 'high_alps') heightFactor = 1.15;
 
     for (const layer of mountainLayers) {
@@ -419,16 +641,14 @@ export function createEnvironment(scene) {
     const stageChanged = !currentStage || currentStage.id !== stage.id;
     currentStage = stage;
 
-    targetTopColor.setHex(stage.topHex ?? 0x22c55e);
-    targetLipColor.setHex(stage.lipHex ?? 0x16a34a);
-    targetSubColor.setHex(stage.subHex ?? 0x92400e);
-
-    if (stage.aurora) {
-      targetSunColor.setHex(0xe2e8f0);
-    } else if (stage.surface === 'sunset_ocean' || stage.skyHex === 0xea580c) {
-      targetSunColor.setHex(0xf97316);
+    const isWaterStage = WATER_SURFACES.has(stage.surface);
+    if (isWaterStage) {
+      targetWaterSurfaceColor.setHex(stage.topHex ?? 0x0284c7);
+      targetWaterWaveColor.setHex(stage.lipHex ?? 0x38bdf8);
     } else {
-      targetSunColor.setHex(0xfde047);
+      targetTopColor.setHex(stage.topHex ?? 0x22c55e);
+      targetLipColor.setHex(stage.lipHex ?? 0x16a34a);
+      targetSubColor.setHex(stage.subHex ?? 0x92400e);
     }
 
     fujiGroup.visible = Boolean(stage.fuji);
@@ -440,17 +660,54 @@ export function createEnvironment(scene) {
       groundMatGrass.color.copy(targetTopColor);
       groundMatGrassLip.color.copy(targetLipColor);
       groundMatSoil.color.copy(targetSubColor);
-      sunMat.color.copy(targetSunColor);
+      waterSurfaceMat.color.copy(targetWaterSurfaceColor);
+      waterWaveMat.color.copy(targetWaterWaveColor);
+      // Al iniciar cualquier nivel siempre se despega desde tierra firme
       for (const chunk of groundChunks) {
-        populateChunkProps(chunk, currentStage);
+        populateChunkProps(chunk, currentStage, true);
       }
     } else if (stageChanged) {
       // Actualiza inmediatamente los chunks que aún están fuera de cámara a la derecha
       for (const chunk of groundChunks) {
         if (chunk.position.x > 16) {
-          populateChunkProps(chunk, currentStage);
+          const underRunway =
+            runwayGroup.visible && Math.abs(chunk.position.x - runwayGroup.position.x) < 22;
+          populateChunkProps(chunk, currentStage, underRunway);
         }
       }
+    }
+  }
+
+  function setTimeOfDay(progressRatio = 0, instant = false) {
+    const p = Math.min(1, Math.max(0, Number.isFinite(progressRatio) ? progressRatio : 0));
+
+    // [0..1/3] Día (Sol brillante) -> [1/3..2/3] Atardecer (Sol naranja bajo) -> [2/3..1] Noche (Luna y estrellas)
+    if (p < 1 / 3) {
+      const sunsetBlend = THREE.MathUtils.smoothstep(p, 0.25, 0.36);
+      targetSunColor.setHex(0xfde047).lerp(new THREE.Color(0xf97316), sunsetBlend);
+      targetCloudColor.setHex(0xffffff).lerp(new THREE.Color(0xfed7aa), sunsetBlend);
+      targetSunY = THREE.MathUtils.lerp(13.2, 7.6, sunsetBlend);
+      targetStarOpacity = 0;
+    } else if (p < 2 / 3) {
+      const toNight = THREE.MathUtils.smoothstep(p, 0.58, 0.7);
+      targetSunColor.setHex(0xf97316).lerp(new THREE.Color(0xf1f5f9), toNight);
+      targetCloudColor.setHex(0xfed7aa).lerp(new THREE.Color(0x94a3b8), toNight);
+      targetSunY = THREE.MathUtils.lerp(7.6, 12.6, toNight);
+      targetStarOpacity = toNight * 0.92;
+    } else {
+      const nightBlend = THREE.MathUtils.smoothstep(p, 0.58, 0.72);
+      targetSunColor.setHex(0xf97316).lerp(new THREE.Color(0xf1f5f9), nightBlend);
+      targetCloudColor.setHex(0xfed7aa).lerp(new THREE.Color(0x94a3b8), nightBlend);
+      targetSunY = THREE.MathUtils.lerp(7.6, 12.6, nightBlend);
+      targetStarOpacity = nightBlend * 0.92;
+    }
+
+    if (instant) {
+      sunMat.color.copy(targetSunColor);
+      cloudMat.color.copy(targetCloudColor);
+      sunMesh.position.y = targetSunY;
+      starMat.opacity = targetStarOpacity;
+      starsGroup.visible = targetStarOpacity > 0.02;
     }
   }
 
@@ -458,6 +715,7 @@ export function createEnvironment(scene) {
     currentLevel = level || LEVELS[0];
     const firstStage = getStageForProgress(currentLevel, 0);
     setStage(firstStage, true);
+    setTimeOfDay(0, true);
     resetRunway(anchorX, currentLevel.originLandmark);
   }
 
@@ -501,11 +759,17 @@ export function createEnvironment(scene) {
   function update(dt, activeScroll) {
     waveTime += dt;
 
-    // Transición suave de colores entre etapas geográficas
+    // Transición suave de materiales y ciclo día/atardecer/noche
     groundMatGrass.color.lerp(targetTopColor, dt * 2.5);
     groundMatGrassLip.color.lerp(targetLipColor, dt * 2.5);
     groundMatSoil.color.lerp(targetSubColor, dt * 2.5);
-    sunMat.color.lerp(targetSunColor, dt * 2.2);
+    waterSurfaceMat.color.lerp(targetWaterSurfaceColor, dt * 2.5);
+    waterWaveMat.color.lerp(targetWaterWaveColor, dt * 2.5);
+    sunMat.color.lerp(targetSunColor, dt * 2.4);
+    cloudMat.color.lerp(targetCloudColor, dt * 2.4);
+    sunMesh.position.y = THREE.MathUtils.lerp(sunMesh.position.y, targetSunY, dt * 2.2);
+    starMat.opacity = THREE.MathUtils.lerp(starMat.opacity, targetStarOpacity, dt * 2.4);
+    starsGroup.visible = starMat.opacity > 0.02;
 
     for (const layer of mountainLayers) {
       for (const m of layer.mountains) {
@@ -521,11 +785,20 @@ export function createEnvironment(scene) {
       });
     }
 
-    const isWater = WATER_SURFACES.has(currentStage?.surface);
-    if (isWater) {
-      for (const chunk of groundChunks) {
-        chunk.userData.tufts.forEach((tuft, idx) => {
-          tuft.position.y = 0.1 + Math.sin(waveTime * 4.2 + idx + chunk.position.x * 0.3) * 0.08;
+    // Animación de olas, barcos y peces submarinos en los bloques de mar
+    for (const chunk of groundChunks) {
+      if (chunk.userData.isWater) {
+        chunk.userData.waves.forEach((wave, idx) => {
+          wave.position.y =
+            0.05 + Math.sin(waveTime * 3.8 + idx * 1.1 + chunk.position.x * 0.25) * 0.11;
+        });
+        chunk.userData.fishes.forEach((fish, idx) => {
+          const phase = waveTime * fish.userData.speed + fish.userData.phase;
+          fish.position.x = fish.userData.baseX + Math.sin(phase * 0.7) * 0.55;
+          fish.position.y = fish.userData.baseY + Math.cos(phase) * 0.22;
+          if (fish.userData.tail) {
+            fish.userData.tail.rotation.y = Math.sin(waveTime * 10 + idx) * 0.35;
+          }
         });
       }
     }
@@ -536,12 +809,15 @@ export function createEnvironment(scene) {
       chunk.position.x -= activeScroll * dt;
       if (chunk.position.x < -groundChunkWidth * 3.5) {
         chunk.position.x += groundChunkWidth * groundChunks.length;
-        populateChunkProps(chunk, currentStage);
+        const underRunway =
+          runwayGroup.visible && Math.abs(chunk.position.x - runwayGroup.position.x) < 22;
+        populateChunkProps(chunk, currentStage, underRunway);
       }
     }
 
     if (runwayGroup.visible) {
       runwayGroup.position.x -= activeScroll * dt;
+      ensureLandUnderRunway();
       if (runwayGroup.position.x < -38) {
         runwayGroup.visible = false;
       }
@@ -571,6 +847,7 @@ export function createEnvironment(scene) {
     update,
     resetRunway,
     setLevel,
-    setStage
+    setStage,
+    setTimeOfDay
   };
 }
