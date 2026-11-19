@@ -26,79 +26,63 @@ function createStorage(entries = {}) {
 
 describe('normalizeProgress', () => {
   it('empieza en el nivel 1 si no hay datos', () => {
-    expect(normalizeProgress(null, 5)).toEqual({ unlocked: 1 });
+    expect(normalizeProgress(null, 20)).toEqual({ unlocked: 1 });
   });
 
-  it('acota el progreso entre 1 y el máximo', () => {
-    expect(normalizeProgress({ unlocked: 0 }, 5)).toEqual({ unlocked: 1 });
-    expect(normalizeProgress({ unlocked: 42 }, 5)).toEqual({ unlocked: 5 });
+  it('acota el progreso entre 1 y el máximo de 20 niveles', () => {
+    expect(normalizeProgress({ unlocked: 0 }, 20)).toEqual({ unlocked: 1 });
+    expect(normalizeProgress({ unlocked: 42 }, 20)).toEqual({ unlocked: 20 });
   });
 });
 
 describe('unlockNextLevel', () => {
   it('desbloquea el siguiente nivel al completar el actual', () => {
-    expect(unlockNextLevel({ unlocked: 1 }, 1, 5)).toEqual({ unlocked: 2 });
+    expect(unlockNextLevel({ unlocked: 1 }, 1, 20)).toEqual({ unlocked: 2 });
   });
 
   it('no retrocede si ya había más progreso', () => {
-    expect(unlockNextLevel({ unlocked: 4 }, 1, 5)).toEqual({ unlocked: 4 });
+    expect(unlockNextLevel({ unlocked: 14 }, 3, 20)).toEqual({ unlocked: 14 });
   });
 
   it('no salta niveles si se completa uno bloqueado', () => {
-    expect(unlockNextLevel({ unlocked: 1 }, 3, 5)).toEqual({ unlocked: 1 });
+    expect(unlockNextLevel({ unlocked: 1 }, 3, 20)).toEqual({ unlocked: 1 });
   });
 
-  it('no pasa del último nivel', () => {
-    expect(unlockNextLevel({ unlocked: 5 }, 5, 5)).toEqual({ unlocked: 5 });
+  it('no pasa del último nivel (20)', () => {
+    expect(unlockNextLevel({ unlocked: 20 }, 20, 20)).toEqual({ unlocked: 20 });
   });
 });
 
 describe('updateBests', () => {
-  it('guarda el récord de un nivel', () => {
-    expect(updateBests({}, 2, 12)).toEqual({ 2: 12 });
+  it('guarda el récord en kilómetros de un nivel', () => {
+    expect(updateBests({}, 2, 1100)).toEqual({ 2: 1100 });
   });
 
   it('solo reemplaza si mejora', () => {
-    expect(updateBests({ 2: 12 }, 2, 8)).toEqual({ 2: 12 });
-    expect(updateBests({ 2: 12 }, 2, 18)).toEqual({ 2: 18 });
+    expect(updateBests({ 2: 850 }, 2, 420)).toEqual({ 2: 850 });
+    expect(updateBests({ 2: 850 }, 2, 1100)).toEqual({ 2: 1100 });
   });
 
   it('normaliza datos corruptos', () => {
-    expect(normalizeBests({ 1: '10', bad: 4, 0: 7, 2: -1 })).toEqual({ 1: 10 });
+    expect(normalizeBests({ 1: '340', bad: 4, 0: 7, 2: -1 })).toEqual({ 1: 340 });
   });
 });
 
 describe('almacenamiento', () => {
-  it('guarda y recupera el progreso', () => {
+  it('guarda y recupera el progreso de la campaña de 20 niveles', () => {
     const storage = createStorage();
-    saveProgress({ unlocked: 3 }, storage);
-    expect(loadProgress(5, storage)).toEqual({ unlocked: 3 });
+    saveProgress({ unlocked: 12 }, storage);
+    expect(loadProgress(20, storage)).toEqual({ unlocked: 12 });
   });
 
-  it('recupera el récord antiguo como nivel 1 en metros', () => {
-    const storage = createStorage({ flapy_plane_best_score_v1: '14' });
-    expect(loadBests(storage)).toEqual({ 1: 504 });
-  });
-
-  it('migra los récords por nivel de obstáculos a metros', () => {
-    const storage = createStorage({
-      flapy_plane_bests_v2: JSON.stringify({ 1: 10, 2: 30 })
-    });
-    expect(loadBests(storage)).toEqual({ 1: 360, 2: 1080 });
-  });
-
-  it('prioriza los récords nuevos en metros', () => {
-    const storage = createStorage({
-      flapy_plane_bests_v3: JSON.stringify({ 1: 950 }),
-      flapy_plane_bests_v2: JSON.stringify({ 1: 30 })
-    });
-    expect(loadBests(storage)).toEqual({ 1: 950 });
-  });
-
-  it('guarda y recupera los récords por nivel', () => {
+  it('guarda y recupera los récords en kilómetros por nivel', () => {
     const storage = createStorage();
-    saveBests({ 1: 1080, 2: 420 }, storage);
-    expect(loadBests(storage)).toEqual({ 1: 1080, 2: 420 });
+    saveBests({ 1: 340, 2: 1100, 15: 4150 }, storage);
+    expect(loadBests(storage)).toEqual({ 1: 340, 2: 1100, 15: 4150 });
+  });
+
+  it('empieza vacío si no hay récords guardados', () => {
+    expect(loadBests(createStorage())).toEqual({});
   });
 });
 

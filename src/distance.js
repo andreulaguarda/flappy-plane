@@ -1,18 +1,22 @@
-export const METERS_PER_WORLD_UNIT = 3;
+export const MAX_LEVEL_DURATION_SEC = 120;
+export const MAX_LEVEL_KM = 4150;
+export const KM_PER_SECOND = MAX_LEVEL_KM / MAX_LEVEL_DURATION_SEC;
 
-// Metros equivalentes a una tubería. Se usa para migrar los récords antiguos
-// (que guardaban el número de obstáculos superados) y para saber si un nivel
-// se ha completado.
-export const METERS_PER_OBSTACLE = 36;
-
-export function formatDistance(meters) {
-  const safeMeters = Number.isFinite(meters) ? Math.max(0, meters) : 0;
-  if (safeMeters < 1000) {
-    return `${Math.floor(safeMeters)} m`;
-  }
-  return `${(safeMeters / 1000).toFixed(2)} km`;
+export function formatDistance(km) {
+  const safeKm = Number.isFinite(km) ? Math.max(0, km) : 0;
+  return `${Math.floor(safeKm)} km`;
 }
 
+export function levelDistanceKm(level) {
+  const km = Number(level?.distanceKm);
+  return Number.isFinite(km) && km > 0 ? km : 0;
+}
+
+// Alias de compatibilidad: toda la campaña trabaja exclusivamente en kilómetros reales
 export function levelDistanceM(level) {
-  return level.obstacleCount * METERS_PER_OBSTACLE;
+  return levelDistanceKm(level);
+}
+
+export function levelDurationSec(level) {
+  return (levelDistanceKm(level) / MAX_LEVEL_KM) * MAX_LEVEL_DURATION_SEC;
 }

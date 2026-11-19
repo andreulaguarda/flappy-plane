@@ -1,5 +1,5 @@
 import { t } from './strings.js';
-import { formatDistance, levelDistanceM } from './distance.js';
+import { formatDistance, levelDistanceKm } from './distance.js';
 
 export function getMedalInfo(points, total) {
   const ratio = total > 0 ? points / total : 0;
@@ -96,12 +96,12 @@ export class UI {
     });
   }
 
-  setBest(meters) {
-    this.hudBest.textContent = formatDistance(meters);
+  setBest(km) {
+    this.hudBest.textContent = formatDistance(km);
   }
 
-  setDistance(meters) {
-    this.scoreDisplay.textContent = formatDistance(meters);
+  setDistance(km) {
+    this.scoreDisplay.textContent = formatDistance(km);
   }
 
   setCoins(value, pop = false) {
@@ -142,7 +142,8 @@ export class UI {
     for (const level of levels) {
       const unlocked = level.id <= progress.unlocked;
       const best = bests[level.id] || 0;
-      const completed = best >= levelDistanceM(level);
+      const targetKm = levelDistanceKm(level);
+      const completed = best >= targetKm;
 
       const card = document.createElement('button');
       card.type = 'button';
@@ -150,7 +151,12 @@ export class UI {
       card.dataset.level = String(level.id);
       card.disabled = !unlocked;
 
-      const meta = unlocked ? t('levelBest', { distance: formatDistance(best) }) : t('locked');
+      const meta = unlocked
+        ? t('levelBest', {
+            distance: formatDistance(best),
+            total: formatDistance(targetKm)
+          })
+        : t('locked', { total: formatDistance(targetKm) });
       const state = completed ? '✓' : unlocked ? '▶' : '🔒';
 
       card.innerHTML = `

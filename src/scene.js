@@ -19,9 +19,13 @@ export function createWorld(canvas) {
   const targetSkyColor = new THREE.Color(LEVELS[0].skyHex);
   const currentFogColor = new THREE.Color(LEVELS[0].fogHex);
   const targetFogColor = new THREE.Color(LEVELS[0].fogHex);
+  const targetLightColor = new THREE.Color(LEVELS[0].lightColor);
+
+  let targetFogNear = 58;
+  let targetFogFar = 135;
 
   scene.background = currentSkyColor;
-  scene.fog = new THREE.Fog(currentFogColor, 58, 135);
+  scene.fog = new THREE.Fog(currentFogColor, targetFogNear, targetFogFar);
 
   const camera = new THREE.PerspectiveCamera(44, 1, 0.5, 160);
 
@@ -83,15 +87,29 @@ export function createWorld(canvas) {
   dirLight.shadow.camera.bottom = -d;
   scene.add(dirLight);
 
-  function setPhase(phase) {
-    targetSkyColor.setHex(phase.skyHex);
-    targetFogColor.setHex(phase.fogHex);
-    dirLight.color.setHex(phase.lightColor);
+  function setPhase(phase, instant = false) {
+    if (!phase) return;
+    targetSkyColor.setHex(phase.skyHex ?? LEVELS[0].skyHex);
+    targetFogColor.setHex(phase.fogHex ?? LEVELS[0].fogHex);
+    targetLightColor.setHex(phase.lightColor ?? 0xfffbeb);
+    targetFogNear = Number.isFinite(phase.fogNear) ? phase.fogNear : 56;
+    targetFogFar = Number.isFinite(phase.fogFar) ? phase.fogFar : 135;
+
+    if (instant) {
+      currentSkyColor.copy(targetSkyColor);
+      currentFogColor.copy(targetFogColor);
+      dirLight.color.copy(targetLightColor);
+      scene.fog.near = targetFogNear;
+      scene.fog.far = targetFogFar;
+    }
   }
 
   function updateColors(dt) {
     currentSkyColor.lerp(targetSkyColor, dt * 2.2);
     currentFogColor.lerp(targetFogColor, dt * 2.2);
+    dirLight.color.lerp(targetLightColor, dt * 2.2);
+    scene.fog.near = THREE.MathUtils.lerp(scene.fog.near, targetFogNear, dt * 2.0);
+    scene.fog.far = THREE.MathUtils.lerp(scene.fog.far, targetFogFar, dt * 2.0);
   }
 
   function shake(duration) {

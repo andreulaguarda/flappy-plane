@@ -26,6 +26,19 @@ export function createObstacleSystem(scene) {
     lightning: new THREE.MeshBasicMaterial({ color: 0xfacc15 })
   };
 
+  function applyTheme(level) {
+    const theme = level?.obstacleTheme;
+    if (!theme) return;
+    MATS.pipeBody.color.setHex(theme.primary ?? 0x10b981);
+    MATS.pipeRim.color.setHex(theme.secondary ?? 0x059669);
+    MATS.towerWall.color.setHex(theme.primary ?? 0x3b82f6);
+    MATS.towerRoof.color.setHex(theme.secondary ?? 0x1e293b);
+    MATS.ringGold.color.setHex(theme.accent ?? 0xfacc15);
+    MATS.ringPylon.color.setHex(theme.secondary ?? 0x64748b);
+    MATS.rockSpire.color.setHex(theme.secondary ?? 0x475569);
+    MATS.lightning.color.setHex(theme.accent ?? 0xfacc15);
+  }
+
   function buildPipeObstacle(gapY, gapHeight) {
     const root = new THREE.Group();
     const topBottomY = gapY + gapHeight * 0.5;
@@ -79,8 +92,6 @@ export function createObstacleSystem(scene) {
     root.add(botTower);
 
     const roof = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.4, 2.4), MATS.towerRoof);
-    // Ligeramente por debajo del techo de la torre para evitar caras coplanares
-    // (z-fighting) en la azotea.
     roof.position.y = botTopY - 0.22;
     root.add(roof);
 
@@ -171,6 +182,7 @@ export function createObstacleSystem(scene) {
   }
 
   function spawn(xPos, level, obstaclesPassed) {
+    applyTheme(level);
     const types = level.types;
     const chosenType = types[Math.floor(Math.random() * types.length)];
 
@@ -193,7 +205,9 @@ export function createObstacleSystem(scene) {
     built.root.position.set(xPos, 0, 0);
     group.add(built.root);
 
-    const oscillates = (chosenType === 'ring' || chosenType === 'storm') && obstaclesPassed >= 15;
+    const oscillates =
+      (chosenType === 'ring' || chosenType === 'storm') &&
+      obstaclesPassed >= Math.max(4, Math.floor((level.obstacleCount || 10) * 0.45));
 
     const obstacle = {
       type: chosenType,
