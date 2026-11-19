@@ -13,6 +13,8 @@ import {
 import { STRINGS } from './strings.js';
 import { createLandmark } from './landmarks.js';
 import { createStageProp } from './stageProps.js';
+import { createObstacleSystem, resolveObstacleStyle } from './obstacles.js';
+import * as THREE from 'three';
 
 describe('LEVELS (Campaña La Vuelta al Mundo en 20 niveles)', () => {
   it('tiene veinte niveles', () => {
@@ -75,11 +77,61 @@ describe('LEVELS (Campaña La Vuelta al Mundo en 20 niveles)', () => {
     }
   });
 
-  it('cada nivel tiene tipos de obstáculo válidos', () => {
-    const validTypes = ['pipe', 'tower', 'ring', 'storm'];
+  it('cada nivel encadena obstáculos temáticos fijos: edificios origen -> elementos del viaje -> edificios destino', () => {
+    const validJourneyStyles = [
+      'giant_trees',
+      'ocean_waves',
+      'alpine_peaks',
+      'med_islands_ruins',
+      'desert_pyramids',
+      'canyon_arches',
+      'jungle_temples',
+      'volcanic_spires',
+      'sakura_pagodas',
+      'coral_atolls',
+      'golden_gate_red_towers',
+      'icebergs_glaciers',
+      'sea_cliffs'
+    ];
+
+    const scene = new THREE.Scene();
+    const obstacleSystem = createObstacleSystem(scene);
+
     for (const level of LEVELS) {
-      expect(level.types.length).toBeGreaterThan(0);
-      for (const type of level.types) expect(validTypes).toContain(type);
+      for (const stage of level.stages) {
+        expect(validJourneyStyles).toContain(stage.obstacleStyle);
+      }
+
+      const startStyle = resolveObstacleStyle(level, 0);
+      expect(startStyle).toEqual({
+        category: 'city',
+        cityId: level.originLandmark,
+        role: 'origin_building'
+      });
+
+      const midIndex = Math.floor(level.obstacleCount * 0.5);
+      const midStyle = resolveObstacleStyle(level, midIndex);
+      expect(midStyle.category).toBe('journey');
+      expect(validJourneyStyles).toContain(midStyle.style);
+
+      const endStyle = resolveObstacleStyle(level, level.obstacleCount - 1);
+      expect(endStyle).toEqual({
+        category: 'city',
+        cityId: level.destinationLandmark,
+        role: 'destination_building'
+      });
+
+      // Comprobar que los obstáculos generados son fijos (no se mueven verticalmente)
+      const obsStart = obstacleSystem.spawn(10, level, 0);
+      const obsMid = obstacleSystem.spawn(20, level, midIndex);
+      const obsEnd = obstacleSystem.spawn(30, level, level.obstacleCount - 1);
+      expect(obsStart.oscillates).toBe(false);
+      expect(obsMid.oscillates).toBe(false);
+      expect(obsEnd.oscillates).toBe(false);
+      expect(obsStart.mesh.children.length).toBeGreaterThan(0);
+      expect(obsMid.mesh.children.length).toBeGreaterThan(0);
+      expect(obsEnd.mesh.children.length).toBeGreaterThan(0);
+      obstacleSystem.clear();
     }
   });
 

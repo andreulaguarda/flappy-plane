@@ -369,8 +369,8 @@ export function createEnvironment(scene) {
     spacing: 24,
     z: -34,
     speed: 0.13,
-    minH: 18,
-    maxH: 27,
+    minH: 16,
+    maxH: 23,
     minR: 7,
     maxR: 10,
     colors: [0x9c7a55, 0x8d6f4f, 0xa3825c]
@@ -381,8 +381,8 @@ export function createEnvironment(scene) {
     spacing: 22,
     z: -23,
     speed: 0.26,
-    minH: 12,
-    maxH: 17.5,
+    minH: 11.5,
+    maxH: 16.5,
     minR: 5.5,
     maxR: 8,
     colors: [0x7c4a1e, 0x6b4423, 0x854d0e]
@@ -397,13 +397,14 @@ export function createEnvironment(scene) {
     if (stage.backdrop === 'open_sea') heightFactor = 0.25;
     else if (stage.backdrop === 'island_chain') heightFactor = 0.55;
     else if (stage.backdrop === 'rolling_hills' || stage.backdrop === 'desert_dunes') heightFactor = 0.72;
-    else if (stage.backdrop === 'high_alps') heightFactor = 1.28;
+    else if (stage.backdrop === 'high_alps') heightFactor = 1.15;
 
     for (const layer of mountainLayers) {
       layer.mountains.forEach((m, idx) => {
         const hex = colors[idx % colors.length];
         m.userData.targetColor.setHex(hex);
-        m.userData.snowCap.visible = showSnow;
+        m.userData.snowCap.visible = true;
+        m.userData.snowCap.material = showSnow ? snowMat : m.userData.baseMat;
         m.userData.targetScaleY = heightFactor;
         if (instant) {
           m.userData.baseMat.color.setHex(hex);

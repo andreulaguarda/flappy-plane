@@ -104,72 +104,164 @@ function buildLondon() {
   return group;
 }
 
+function addStrut(parent, p1, p2, r1, r2, material, radialSegments = 4) {
+  const dir = new THREE.Vector3().subVectors(p2, p1);
+  const len = dir.length();
+  if (len <= 0.0001) return null;
+  const geo = new THREE.CylinderGeometry(r2, r1, len, radialSegments);
+  if (radialSegments === 4) {
+    geo.rotateY(Math.PI / 4);
+  }
+  const mesh = new THREE.Mesh(geo, material);
+  mesh.position.addVectors(p1, p2).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  mesh.castShadow = true;
+  parent.add(mesh);
+  return mesh;
+}
+
 function buildParis() {
   const group = new THREE.Group();
-  const ironMat = mat(0x78553a, 0.55, { metalness: 0.35 });
-  const darkIronMat = mat(0x5c3d28, 0.6, { metalness: 0.3 });
+  const ironMat = mat(0x9a714c, 0.5, { metalness: 0.38 });
+  const darkIronMat = mat(0x6e4f32, 0.58, { metalness: 0.35 });
+  const stonePedestalMat = mat(0xd6c7a9, 0.75);
   const goldMat = basicMat(0xfef08a);
   const mansardMat = mat(0x475569, 0.65);
   const wallMat = mat(0xe2d5b5, 0.75);
 
-  // 4 patas inclinadas de la Torre Eiffel
-  const legOffsets = [
-    [-1.25, -1.25],
-    [1.25, -1.25],
-    [-1.25, 1.25],
-    [1.25, 1.25]
+  const signs = [
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1]
   ];
-  for (const [lx, lz] of legOffsets) {
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.55, 3.4, 0.55), ironMat);
-    leg.position.set(lx * 0.75, 1.6, lz * 0.75);
-    leg.rotation.z = -lx * 0.18;
-    leg.rotation.x = lz * 0.18;
-    group.add(leg);
+
+  // 1. Pedestales de piedra y 4 pilares inclinados inferiores (con hueco real entre las patas)
+  for (const [sx, sz] of signs) {
+    const ped = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.45, 0.75), stonePedestalMat);
+    ped.position.set(sx * 1.95, 0.22, sz * 1.35);
+    group.add(ped);
+
+    // Pata exterior e interior formando celosía
+    const pBotOut = new THREE.Vector3(sx * 2.02, 0.4, sz * 1.38);
+    const pTopOut = new THREE.Vector3(sx * 1.12, 3.35, sz * 0.82);
+    addStrut(group, pBotOut, pTopOut, 0.22, 0.17, ironMat);
+
+    const pBotIn = new THREE.Vector3(sx * 1.52, 0.4, sz * 1.05);
+    const pTopIn = new THREE.Vector3(sx * 0.78, 3.35, sz * 0.58);
+    addStrut(group, pBotIn, pTopIn, 0.18, 0.14, darkIronMat);
+
+    // Traviesas de celosía en cada pata inferior
+    for (const t of [0.28, 0.55, 0.82]) {
+      const a = new THREE.Vector3().lerpVectors(pBotOut, pTopOut, t);
+      const b = new THREE.Vector3().lerpVectors(pBotIn, pTopIn, t);
+      addStrut(group, a, b, 0.08, 0.08, darkIronMat);
+    }
   }
 
-  // Arco inferior
-  const arch = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.18, 6, 12, Math.PI), darkIronMat);
-  arch.position.set(0, 0.2, 0.85);
-  group.add(arch);
+  // Arcos semicirculares icónicos de la base (frontal y trasero)
+  [-1.12, 1.12].forEach((zPos) => {
+    const arch = new THREE.Mesh(
+      new THREE.TorusGeometry(1.26, 0.11, 6, 18, Math.PI),
+      darkIronMat
+    );
+    arch.position.set(0, 0.42, zPos);
+    group.add(arch);
 
-  // Primera plataforma
-  const deck1 = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.38, 2.7), darkIronMat);
-  deck1.position.set(0, 3.3, 0);
-  group.add(deck1);
+    const archInner = new THREE.Mesh(
+      new THREE.TorusGeometry(1.1, 0.07, 6, 18, Math.PI),
+      ironMat
+    );
+    archInner.position.set(0, 0.42, zPos);
+    group.add(archInner);
 
-  // Tramo medio
-  const midSection = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 1.25, 3.2, 4), ironMat);
-  midSection.rotation.y = Math.PI / 4;
-  midSection.position.set(0, 5.0, 0);
-  group.add(midSection);
+    // Viga horizontal sobre el arco bajo el primer piso
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.18, 0.18), ironMat);
+    lintel.position.set(0, 2.75, zPos * 0.78);
+    group.add(lintel);
+  });
 
-  // Segunda plataforma
-  const deck2 = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.32, 1.75), darkIronMat);
-  deck2.position.set(0, 6.65, 0);
-  group.add(deck2);
+  // 2. Primer piso (doble galería ancha)
+  const deck1Low = new THREE.Mesh(new THREE.BoxGeometry(2.95, 0.24, 2.15), darkIronMat);
+  deck1Low.position.set(0, 3.4, 0);
+  const deck1Glow = new THREE.Mesh(new THREE.BoxGeometry(2.65, 0.18, 1.88), goldMat);
+  deck1Glow.position.set(0, 3.6, 0);
+  const deck1Top = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.2, 2.02), ironMat);
+  deck1Top.position.set(0, 3.78, 0);
+  group.add(deck1Low, deck1Glow, deck1Top);
 
-  // Aguja superior
-  const upperSpire = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.7, 4.4, 4), ironMat);
-  upperSpire.rotation.y = Math.PI / 4;
-  upperSpire.position.set(0, 9.0, 0);
-  group.add(upperSpire);
+  // 3. Tramo medio: 4 patas convergentes con hueco central visible hasta el 2.º piso
+  for (const [sx, sz] of signs) {
+    const mBotOut = new THREE.Vector3(sx * 0.96, 3.85, sz * 0.7);
+    const mTopOut = new THREE.Vector3(sx * 0.54, 6.75, sz * 0.42);
+    addStrut(group, mBotOut, mTopOut, 0.18, 0.14, ironMat);
 
-  const cupole = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 4), darkIronMat);
-  cupole.rotation.y = Math.PI / 4;
-  cupole.position.set(0, 11.6, 0);
-  group.add(cupole);
+    const mBotIn = new THREE.Vector3(sx * 0.64, 3.85, sz * 0.48);
+    const mTopIn = new THREE.Vector3(sx * 0.32, 6.75, sz * 0.25);
+    addStrut(group, mBotIn, mTopIn, 0.14, 0.11, darkIronMat);
+  }
 
-  const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), goldMat);
-  beacon.position.set(0, 12.35, 0);
-  group.add(beacon);
+  // Cinturones horizontales de celosía en el tramo medio (dejando hueco en el centro)
+  [4.75, 5.75].forEach((yMid, idx) => {
+    const w = idx === 0 ? 1.72 : 1.42;
+    const d = idx === 0 ? 1.25 : 1.02;
+    const belt = new THREE.Mesh(new THREE.BoxGeometry(w, 0.16, d), darkIronMat);
+    belt.position.set(0, yMid, 0);
+    group.add(belt);
+  });
 
-  // Edificios parisinos laterales
-  [-3.2, 3.2].forEach((bx) => {
-    const house = new THREE.Mesh(new THREE.BoxGeometry(2.1, 2.2, 1.4), wallMat);
-    house.position.set(bx, 1.1, -0.4);
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(1.5, 0.9, 4), mansardMat);
+  // 4. Segundo piso (plataforma doble)
+  const deck2Low = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.22, 1.28), darkIronMat);
+  deck2Low.position.set(0, 6.8, 0);
+  const deck2Glow = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.14, 1.05), goldMat);
+  deck2Glow.position.set(0, 6.96, 0);
+  const deck2Top = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.18, 1.15), ironMat);
+  deck2Top.position.set(0, 7.12, 0);
+  group.add(deck2Low, deck2Glow, deck2Top);
+
+  // 5. Aguja superior estilizada con nervios en las 4 esquinas y anillos de celosía
+  for (const [sx, sz] of signs) {
+    const uBot = new THREE.Vector3(sx * 0.42, 7.2, sz * 0.34);
+    const uTop = new THREE.Vector3(sx * 0.15, 11.7, sz * 0.13);
+    addStrut(group, uBot, uTop, 0.11, 0.065, ironMat);
+  }
+
+  const coreSpire = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.38, 4.5, 4), darkIronMat);
+  coreSpire.rotation.y = Math.PI / 4;
+  coreSpire.position.set(0, 9.45, 0);
+  group.add(coreSpire);
+
+  // Anillos horizontales de celosía a lo largo de la aguja superior
+  for (let i = 0; i < 6; i++) {
+    const t = i / 5;
+    const yRing = THREE.MathUtils.lerp(7.6, 11.3, t);
+    const sRing = THREE.MathUtils.lerp(0.88, 0.42, t);
+    const ring = new THREE.Mesh(
+      new THREE.BoxGeometry(sRing, 0.12, sRing * 0.85),
+      ironMat
+    );
+    ring.position.set(0, yRing, 0);
+    group.add(ring);
+  }
+
+  // 6. Mirador superior, cúpula, faro y antena
+  const topGallery = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.22, 0.62), darkIronMat);
+  topGallery.position.set(0, 11.8, 0);
+  const cupola = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.34, 0.65, 8), ironMat);
+  cupola.position.set(0, 12.22, 0);
+  const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), goldMat);
+  beacon.position.set(0, 12.65, 0);
+  const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.07, 1.5, 6), ironMat);
+  antenna.position.set(0, 13.5, 0);
+  group.add(topGallery, cupola, beacon, antenna);
+
+  // Edificios parisinos Haussmann bajos a los lados para enmarcar la torre
+  [-4.1, 4.1].forEach((bx) => {
+    const house = new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.9, 1.3), wallMat);
+    house.position.set(bx, 0.95, -0.5);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1.38, 0.8, 4), mansardMat);
     roof.rotation.y = Math.PI / 4;
-    roof.position.set(bx, 2.65, -0.4);
+    roof.position.set(bx, 2.3, -0.5);
     group.add(house, roof);
   });
 

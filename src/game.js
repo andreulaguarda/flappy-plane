@@ -435,13 +435,13 @@ export class Game {
       this.scrollSpeed = this.level.speedStart;
       this.planeVelY = CONFIG.takeoffExitVelY;
       this.distSinceLastSpawn = 0;
-      this.obstaclesSpawned = 2;
-      const firstObstacle = this.obstacles.spawn(16, this.level, this.obstaclesPassed);
+      const firstObstacle = this.obstacles.spawn(16, this.level, 0);
       const secondObstacle = this.obstacles.spawn(
         16 + CONFIG.spawnIntervalDist,
         this.level,
-        this.obstaclesPassed
+        1
       );
+      this.obstaclesSpawned = 2;
       this.coins.spawn(firstObstacle);
       this.coins.spawn(secondObstacle);
       this.state = STATE.PLAYING;
@@ -475,18 +475,12 @@ export class Game {
     }
 
     const targetKm = levelDistanceKm(this.level);
-    const remainingKm = Math.max(0, targetKm - this.distanceKm);
-    const leadClearanceSec =
-      (CONFIG.obstacleSpawnX - this.world.planeAnchorX) / Math.max(1, this.scrollSpeed);
-    const leadClearanceKm = KM_PER_SECOND * leadClearanceSec;
 
     if (hitsFloor(this.planeY, CONFIG.planeRadius, CONFIG.floorY)) {
       this.planeY = CONFIG.floorY + CONFIG.planeRadius;
       this.plane.position.y = this.planeY;
 
-      const allSpawnedCleared =
-        this.isRouteDistanceCompleted() && this.obstaclesPassed >= this.obstaclesSpawned;
-      if (!allSpawnedCleared) {
+      if (this.obstaclesPassed < this.level.obstacleCount) {
         this.triggerGameOver();
         return;
       }
@@ -496,14 +490,13 @@ export class Game {
     this.distSinceLastSpawn += this.scrollSpeed * dt;
     if (
       this.obstaclesSpawned < this.level.obstacleCount &&
-      remainingKm > leadClearanceKm &&
       this.distSinceLastSpawn >= CONFIG.spawnIntervalDist
     ) {
       this.distSinceLastSpawn = 0;
       const newObstacle = this.obstacles.spawn(
         CONFIG.obstacleSpawnX,
         this.level,
-        this.obstaclesPassed
+        this.obstaclesSpawned
       );
       this.coins.spawn(newObstacle);
       this.obstaclesSpawned++;
@@ -534,14 +527,8 @@ export class Game {
         obs.passed = true;
         this.obstaclesPassed++;
 
-        if (obs.type === 'ring') {
-          this.particles.spawnBurst(
-            obs.mesh.position.x,
-            obs.gapY,
-            0,
-            [0xfacc15, 0x38bdf8, 0xffffff],
-            14
-          );
+        if (this.obstaclesPassed >= this.level.obstacleCount) {
+          this.addDistance(targetKm - this.distanceKm);
         }
 
         const progressRatio = targetKm > 0 ? this.distanceKm / targetKm : 0;
@@ -581,8 +568,7 @@ export class Game {
     // aparece la pista de aterrizaje junto al monumento icónico de la ciudad de destino.
     if (
       !this.runwaySpawned &&
-      this.isRouteDistanceCompleted() &&
-      this.obstaclesPassed >= this.obstaclesSpawned
+      this.obstaclesPassed >= this.level.obstacleCount
     ) {
       const lastObstacle = this.obstacles.obstacles[this.obstacles.obstacles.length - 1];
       const obstacleClear = !lastObstacle || lastObstacle.mesh.position.x < planeX - 8;

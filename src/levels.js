@@ -11,16 +11,12 @@ const RAW_LEVELS = [
     distanceKm: 340,
     originLandmark: 'london',
     destinationLandmark: 'paris',
-    types: ['pipe', 'tower'],
-    obstacleTheme: {
-      primary: 0x3b82f6,
-      secondary: 0x1d4ed8,
-      accent: 0xfacc15
-    },
+    types: ['origin_building', 'giant_trees', 'ocean_waves', 'destination_building'],
     stages: [
       {
         id: 'english_countryside',
         at: 0.0,
+        obstacleStyle: 'giant_trees',
         skyHex: 0x60a5fa,
         fogHex: 0xbfdbfe,
         fogNear: 56,
@@ -39,6 +35,7 @@ const RAW_LEVELS = [
       {
         id: 'english_channel',
         at: 0.32,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0x38bdf8,
         fogHex: 0xbae6fd,
         fogNear: 48,
@@ -57,6 +54,7 @@ const RAW_LEVELS = [
       {
         id: 'french_countryside',
         at: 0.64,
+        obstacleStyle: 'giant_trees',
         skyHex: 0x38bdf8,
         fogHex: 0xdbeafe,
         fogNear: 56,
@@ -75,6 +73,7 @@ const RAW_LEVELS = [
       {
         id: 'paris_entry',
         at: 0.84,
+        obstacleStyle: 'giant_trees',
         skyHex: 0x7dd3fc,
         fogHex: 0xe0f2fe,
         fogNear: 56,
@@ -100,16 +99,12 @@ const RAW_LEVELS = [
     distanceKm: 1100,
     originLandmark: 'paris',
     destinationLandmark: 'rome',
-    types: ['tower', 'ring'],
-    obstacleTheme: {
-      primary: 0xd97706,
-      secondary: 0x92400e,
-      accent: 0xfef08a
-    },
+    types: ['origin_building', 'giant_trees', 'alpine_peaks', 'med_islands_ruins', 'destination_building'],
     stages: [
       {
         id: 'french_plains',
         at: 0.0,
+        obstacleStyle: 'giant_trees',
         skyHex: 0x38bdf8,
         fogHex: 0xbae6fd,
         fogNear: 56,
@@ -128,6 +123,7 @@ const RAW_LEVELS = [
       {
         id: 'alps_crossing',
         at: 0.3,
+        obstacleStyle: 'alpine_peaks',
         skyHex: 0x60a5fa,
         fogHex: 0xe2e8f0,
         fogNear: 46,
@@ -146,6 +142,7 @@ const RAW_LEVELS = [
       {
         id: 'italian_hills',
         at: 0.68,
+        obstacleStyle: 'med_islands_ruins',
         skyHex: 0xfbbf24,
         fogHex: 0xfef3c7,
         fogNear: 56,
@@ -171,16 +168,12 @@ const RAW_LEVELS = [
     distanceKm: 1050,
     originLandmark: 'rome',
     destinationLandmark: 'athens',
-    types: ['pipe', 'ring'],
-    obstacleTheme: {
-      primary: 0xf8fafc,
-      secondary: 0x0284c7,
-      accent: 0xfacc15
-    },
+    types: ['origin_building', 'med_islands_ruins', 'ocean_waves', 'destination_building'],
     stages: [
       {
         id: 'italian_coast',
         at: 0.0,
+        obstacleStyle: 'med_islands_ruins',
         skyHex: 0x38bdf8,
         fogHex: 0xbae6fd,
         fogNear: 58,
@@ -199,6 +192,7 @@ const RAW_LEVELS = [
       {
         id: 'deep_mediterranean',
         at: 0.25,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0x0284c7,
         fogHex: 0x7dd3fc,
         fogNear: 58,
@@ -217,6 +211,7 @@ const RAW_LEVELS = [
       {
         id: 'aegean_rocky_islands',
         at: 0.65,
+        obstacleStyle: 'med_islands_ruins',
         skyHex: 0x0ea5e9,
         fogHex: 0xe0f2fe,
         fogNear: 58,
@@ -242,16 +237,12 @@ const RAW_LEVELS = [
     distanceKm: 1120,
     originLandmark: 'athens',
     destinationLandmark: 'cairo',
-    types: ['ring', 'tower'],
-    obstacleTheme: {
-      primary: 0xf59e0b,
-      secondary: 0xb45309,
-      accent: 0xfef08a
-    },
+    types: ['origin_building', 'ocean_waves', 'desert_pyramids', 'destination_building'],
     stages: [
       {
         id: 'aegean_sea',
         at: 0.0,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0x0ea5e9,
         fogHex: 0xbae6fd,
         fogNear: 58,
@@ -270,6 +261,7 @@ const RAW_LEVELS = [
       {
         id: 'egyptian_coast',
         at: 0.45,
+        obstacleStyle: 'desert_pyramids',
         skyHex: 0x38bdf8,
         fogHex: 0xfde68a,
         fogNear: 54,
@@ -288,6 +280,7 @@ const RAW_LEVELS = [
       {
         id: 'golden_dunes',
         at: 0.7,
+        obstacleStyle: 'desert_pyramids',
         skyHex: 0xf59e0b,
         fogHex: 0xfde68a,
         fogNear: 48,
@@ -313,16 +306,12 @@ const RAW_LEVELS = [
     distanceKm: 1300,
     originLandmark: 'cairo',
     destinationLandmark: 'baghdad',
-    types: ['tower', 'storm'],
-    obstacleTheme: {
-      primary: 0xc2410c,
-      secondary: 0x7c2d12,
-      accent: 0xfbbf24
-    },
+    types: ['origin_building', 'desert_pyramids', 'canyon_arches', 'destination_building'],
     stages: [
       {
         id: 'terracotta_desert',
         at: 0.0,
+        obstacleStyle: 'desert_pyramids',
         skyHex: 0xea580c,
         fogHex: 0xfdba74,
         fogNear: 40,
@@ -341,6 +330,7 @@ const RAW_LEVELS = [
       {
         id: 'mesopotamian_rivers',
         at: 0.55,
+        obstacleStyle: 'canyon_arches',
         skyHex: 0xf97316,
         fogHex: 0xfed7aa,
         fogNear: 46,
@@ -359,6 +349,7 @@ const RAW_LEVELS = [
       {
         id: 'baghdad_oasis',
         at: 0.82,
+        obstacleStyle: 'canyon_arches',
         skyHex: 0xd97706,
         fogHex: 0xfde68a,
         fogNear: 52,
@@ -384,16 +375,12 @@ const RAW_LEVELS = [
     distanceKm: 3300,
     originLandmark: 'baghdad',
     destinationLandmark: 'bombay',
-    types: ['pipe', 'tower', 'ring'],
-    obstacleTheme: {
-      primary: 0xea580c,
-      secondary: 0x9a3412,
-      accent: 0x38bdf8
-    },
+    types: ['origin_building', 'canyon_arches', 'ocean_waves', 'destination_building'],
     stages: [
       {
         id: 'rocky_canyons',
         at: 0.0,
+        obstacleStyle: 'canyon_arches',
         skyHex: 0xf97316,
         fogHex: 0xfdba74,
         fogNear: 50,
@@ -412,6 +399,7 @@ const RAW_LEVELS = [
       {
         id: 'arabian_sea_coast',
         at: 0.36,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0xfb923c,
         fogHex: 0xfed7aa,
         fogNear: 56,
@@ -430,6 +418,7 @@ const RAW_LEVELS = [
       {
         id: 'bombay_harbor',
         at: 0.78,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0xf59e0b,
         fogHex: 0xfde68a,
         fogNear: 56,
@@ -455,16 +444,12 @@ const RAW_LEVELS = [
     distanceKm: 1650,
     originLandmark: 'bombay',
     destinationLandmark: 'calcutta',
-    types: ['tower', 'ring'],
-    obstacleTheme: {
-      primary: 0x059669,
-      secondary: 0xb45309,
-      accent: 0xfacc15
-    },
+    types: ['origin_building', 'giant_trees', 'jungle_temples', 'destination_building'],
     stages: [
       {
         id: 'emerald_interior',
         at: 0.0,
+        obstacleStyle: 'giant_trees',
         skyHex: 0x38bdf8,
         fogHex: 0xa7f3d0,
         fogNear: 54,
@@ -483,6 +468,7 @@ const RAW_LEVELS = [
       {
         id: 'stepped_temples_valley',
         at: 0.4,
+        obstacleStyle: 'jungle_temples',
         skyHex: 0xfbbf24,
         fogHex: 0xfde68a,
         fogNear: 54,
@@ -501,6 +487,7 @@ const RAW_LEVELS = [
       {
         id: 'bengal_plains',
         at: 0.78,
+        obstacleStyle: 'jungle_temples',
         skyHex: 0x34d399,
         fogHex: 0xd1fae5,
         fogNear: 56,
@@ -526,16 +513,12 @@ const RAW_LEVELS = [
     distanceKm: 1620,
     originLandmark: 'calcutta',
     destinationLandmark: 'bangkok',
-    types: ['pipe', 'ring', 'storm'],
-    obstacleTheme: {
-      primary: 0xf59e0b,
-      secondary: 0x15803d,
-      accent: 0xfef08a
-    },
+    types: ['origin_building', 'giant_trees', 'jungle_temples', 'destination_building'],
     stages: [
       {
         id: 'river_deltas',
         at: 0.0,
+        obstacleStyle: 'giant_trees',
         skyHex: 0x38bdf8,
         fogHex: 0xbae6fd,
         fogNear: 52,
@@ -554,6 +537,7 @@ const RAW_LEVELS = [
       {
         id: 'dense_tropical_jungle',
         at: 0.38,
+        obstacleStyle: 'jungle_temples',
         skyHex: 0x10b981,
         fogHex: 0xa7f3d0,
         fogNear: 48,
@@ -572,6 +556,7 @@ const RAW_LEVELS = [
       {
         id: 'golden_pagodas_approach',
         at: 0.72,
+        obstacleStyle: 'jungle_temples',
         skyHex: 0xf59e0b,
         fogHex: 0xfef08a,
         fogNear: 54,
@@ -597,16 +582,12 @@ const RAW_LEVELS = [
     distanceKm: 1430,
     originLandmark: 'bangkok',
     destinationLandmark: 'singapore',
-    types: ['pipe', 'tower'],
-    obstacleTheme: {
-      primary: 0x06b6d4,
-      secondary: 0x0e7490,
-      accent: 0xfacc15
-    },
+    types: ['origin_building', 'jungle_temples', 'coral_atolls', 'ocean_waves', 'destination_building'],
     stages: [
       {
         id: 'malay_jungle',
         at: 0.0,
+        obstacleStyle: 'jungle_temples',
         skyHex: 0x38bdf8,
         fogHex: 0xa7f3d0,
         fogNear: 54,
@@ -625,6 +606,7 @@ const RAW_LEVELS = [
       {
         id: 'tropical_archipelago',
         at: 0.35,
+        obstacleStyle: 'coral_atolls',
         skyHex: 0x06b6d4,
         fogHex: 0xa5f3fc,
         fogNear: 56,
@@ -643,6 +625,7 @@ const RAW_LEVELS = [
       {
         id: 'turquoise_strait',
         at: 0.72,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0x22d3ee,
         fogHex: 0xcffafe,
         fogNear: 58,
@@ -668,16 +651,12 @@ const RAW_LEVELS = [
     distanceKm: 2400,
     originLandmark: 'singapore',
     destinationLandmark: 'manila',
-    types: ['pipe', 'storm', 'ring'],
-    obstacleTheme: {
-      primary: 0x10b981,
-      secondary: 0x475569,
-      accent: 0xf97316
-    },
+    types: ['origin_building', 'ocean_waves', 'volcanic_spires', 'jungle_temples', 'destination_building'],
     stages: [
       {
         id: 'bright_tropical_sea',
         at: 0.0,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0x38bdf8,
         fogHex: 0xe0f2fe,
         fogNear: 58,
@@ -696,6 +675,7 @@ const RAW_LEVELS = [
       {
         id: 'volcanic_islands',
         at: 0.36,
+        obstacleStyle: 'volcanic_spires',
         skyHex: 0x0ea5e9,
         fogHex: 0xbae6fd,
         fogNear: 52,
@@ -714,6 +694,7 @@ const RAW_LEVELS = [
       {
         id: 'philippine_island_lush',
         at: 0.72,
+        obstacleStyle: 'jungle_temples',
         skyHex: 0x38bdf8,
         fogHex: 0xbae6fd,
         fogNear: 56,
@@ -739,16 +720,12 @@ const RAW_LEVELS = [
     distanceKm: 3000,
     originLandmark: 'manila',
     destinationLandmark: 'tokyo',
-    types: ['tower', 'ring'],
-    obstacleTheme: {
-      primary: 0xef4444,
-      secondary: 0x1e293b,
-      accent: 0xfbcfe8
-    },
+    types: ['origin_building', 'ocean_waves', 'sakura_pagodas', 'destination_building'],
     stages: [
       {
         id: 'east_china_sea',
         at: 0.0,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0x38bdf8,
         fogHex: 0xbae6fd,
         fogNear: 56,
@@ -767,6 +744,7 @@ const RAW_LEVELS = [
       {
         id: 'mount_fuji_and_sakura',
         at: 0.38,
+        obstacleStyle: 'sakura_pagodas',
         skyHex: 0x93c5fd,
         fogHex: 0xfce7f3,
         fogNear: 54,
@@ -786,6 +764,7 @@ const RAW_LEVELS = [
       {
         id: 'tokyo_urban_horizon',
         at: 0.76,
+        obstacleStyle: 'sakura_pagodas',
         skyHex: 0x60a5fa,
         fogHex: 0xdbeafe,
         fogNear: 54,
@@ -812,16 +791,12 @@ const RAW_LEVELS = [
     distanceKm: 4100,
     originLandmark: 'tokyo',
     destinationLandmark: 'midway',
-    types: ['pipe', 'ring', 'storm'],
-    obstacleTheme: {
-      primary: 0x0284c7,
-      secondary: 0x1e3a8a,
-      accent: 0xfacc15
-    },
+    types: ['origin_building', 'ocean_waves', 'coral_atolls', 'destination_building'],
     stages: [
       {
         id: 'japanese_pacific_departure',
         at: 0.0,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0x38bdf8,
         fogHex: 0xbae6fd,
         fogNear: 58,
@@ -840,6 +815,7 @@ const RAW_LEVELS = [
       {
         id: 'deep_pacific_fleet',
         at: 0.3,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0x0284c7,
         fogHex: 0x7dd3fc,
         fogNear: 60,
@@ -858,6 +834,7 @@ const RAW_LEVELS = [
       {
         id: 'midway_coral_atolls',
         at: 0.76,
+        obstacleStyle: 'coral_atolls',
         skyHex: 0x06b6d4,
         fogHex: 0xa5f3fc,
         fogNear: 58,
@@ -883,16 +860,12 @@ const RAW_LEVELS = [
     distanceKm: 2100,
     originLandmark: 'midway',
     destinationLandmark: 'honolulu',
-    types: ['ring', 'storm'],
-    obstacleTheme: {
-      primary: 0x9333ea,
-      secondary: 0xea580c,
-      accent: 0xfacc15
-    },
+    types: ['origin_building', 'ocean_waves', 'coral_atolls', 'volcanic_spires', 'destination_building'],
     stages: [
       {
         id: 'pacific_sunset_purple',
         at: 0.0,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0x7e22ce,
         fogHex: 0xf97316,
         fogNear: 52,
@@ -911,6 +884,7 @@ const RAW_LEVELS = [
       {
         id: 'hawaiian_beaches',
         at: 0.42,
+        obstacleStyle: 'coral_atolls',
         skyHex: 0xea580c,
         fogHex: 0xfdba74,
         fogNear: 52,
@@ -929,6 +903,7 @@ const RAW_LEVELS = [
       {
         id: 'smoking_hawaiian_volcanoes',
         at: 0.7,
+        obstacleStyle: 'volcanic_spires',
         skyHex: 0xc2410c,
         fogHex: 0xfb923c,
         fogNear: 46,
@@ -954,16 +929,12 @@ const RAW_LEVELS = [
     distanceKm: 3850,
     originLandmark: 'honolulu',
     destinationLandmark: 'san_francisco',
-    types: ['tower', 'ring', 'storm'],
-    obstacleTheme: {
-      primary: 0xdc2626,
-      secondary: 0x991b1b,
-      accent: 0xf8fafc
-    },
+    types: ['origin_building', 'ocean_waves', 'golden_gate_red_towers', 'destination_building'],
     stages: [
       {
         id: 'eastern_pacific_open',
         at: 0.0,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0x0284c7,
         fogHex: 0xbae6fd,
         fogNear: 58,
@@ -982,6 +953,7 @@ const RAW_LEVELS = [
       {
         id: 'california_dense_fog',
         at: 0.5,
+        obstacleStyle: 'golden_gate_red_towers',
         skyHex: 0x94a3b8,
         fogHex: 0xcbd5e1,
         fogNear: 20,
@@ -1000,6 +972,7 @@ const RAW_LEVELS = [
       {
         id: 'golden_gate_approach',
         at: 0.8,
+        obstacleStyle: 'golden_gate_red_towers',
         skyHex: 0x7dd3fc,
         fogHex: 0xe2e8f0,
         fogNear: 30,
@@ -1025,16 +998,12 @@ const RAW_LEVELS = [
     distanceKm: 4150,
     originLandmark: 'san_francisco',
     destinationLandmark: 'new_york',
-    types: ['pipe', 'tower', 'ring'],
-    obstacleTheme: {
-      primary: 0x475569,
-      secondary: 0x1e293b,
-      accent: 0x34d399
-    },
+    types: ['origin_building', 'canyon_arches', 'giant_trees', 'destination_building'],
     stages: [
       {
         id: 'western_grand_canyons',
         at: 0.0,
+        obstacleStyle: 'canyon_arches',
         skyHex: 0xf97316,
         fogHex: 0xfed7aa,
         fogNear: 54,
@@ -1053,6 +1022,7 @@ const RAW_LEVELS = [
       {
         id: 'great_american_plains',
         at: 0.36,
+        obstacleStyle: 'giant_trees',
         skyHex: 0x38bdf8,
         fogHex: 0xfef3c7,
         fogNear: 58,
@@ -1071,6 +1041,7 @@ const RAW_LEVELS = [
       {
         id: 'manhattan_skyline_entry',
         at: 0.74,
+        obstacleStyle: 'giant_trees',
         skyHex: 0x60a5fa,
         fogHex: 0xdbeafe,
         fogNear: 54,
@@ -1096,16 +1067,12 @@ const RAW_LEVELS = [
     distanceKm: 1850,
     originLandmark: 'new_york',
     destinationLandmark: 'newfoundland',
-    types: ['pipe', 'tower', 'storm'],
-    obstacleTheme: {
-      primary: 0x0284c7,
-      secondary: 0x1e3a8a,
-      accent: 0xe0f2fe
-    },
+    types: ['origin_building', 'giant_trees', 'icebergs_glaciers', 'destination_building'],
     stages: [
       {
         id: 'northeast_cold_coast',
         at: 0.0,
+        obstacleStyle: 'giant_trees',
         skyHex: 0x60a5fa,
         fogHex: 0xdbeafe,
         fogNear: 54,
@@ -1124,6 +1091,7 @@ const RAW_LEVELS = [
       {
         id: 'dark_boreal_forest',
         at: 0.34,
+        obstacleStyle: 'giant_trees',
         skyHex: 0x3b82f6,
         fogHex: 0xbfdbfe,
         fogNear: 50,
@@ -1142,6 +1110,7 @@ const RAW_LEVELS = [
       {
         id: 'first_atlantic_icebergs',
         at: 0.7,
+        obstacleStyle: 'icebergs_glaciers',
         skyHex: 0x38bdf8,
         fogHex: 0xe0f2fe,
         fogNear: 48,
@@ -1167,16 +1136,12 @@ const RAW_LEVELS = [
     distanceKm: 1600,
     originLandmark: 'newfoundland',
     destinationLandmark: 'greenland',
-    types: ['ring', 'storm'],
-    obstacleTheme: {
-      primary: 0xbae6fd,
-      secondary: 0x0284c7,
-      accent: 0xffffff
-    },
+    types: ['origin_building', 'icebergs_glaciers', 'alpine_peaks', 'destination_building'],
     stages: [
       {
         id: 'labrador_ice_sea',
         at: 0.0,
+        obstacleStyle: 'icebergs_glaciers',
         skyHex: 0x7dd3fc,
         fogHex: 0xe0f2fe,
         fogNear: 46,
@@ -1195,6 +1160,7 @@ const RAW_LEVELS = [
       {
         id: 'arctic_glaciers',
         at: 0.36,
+        obstacleStyle: 'icebergs_glaciers',
         skyHex: 0x93c5fd,
         fogHex: 0xf1f5f9,
         fogNear: 42,
@@ -1213,6 +1179,7 @@ const RAW_LEVELS = [
       {
         id: 'greenland_snow_peaks',
         at: 0.72,
+        obstacleStyle: 'alpine_peaks',
         skyHex: 0xbfdbfe,
         fogHex: 0xf8fafc,
         fogNear: 40,
@@ -1238,16 +1205,12 @@ const RAW_LEVELS = [
     distanceKm: 1400,
     originLandmark: 'greenland',
     destinationLandmark: 'reykjavik',
-    types: ['tower', 'ring', 'storm'],
-    obstacleTheme: {
-      primary: 0x10b981,
-      secondary: 0x312e81,
-      accent: 0xa855f7
-    },
+    types: ['origin_building', 'icebergs_glaciers', 'volcanic_spires', 'destination_building'],
     stages: [
       {
         id: 'denmark_strait_twilight',
         at: 0.0,
+        obstacleStyle: 'icebergs_glaciers',
         skyHex: 0x1e1b4b,
         fogHex: 0x312e81,
         fogNear: 48,
@@ -1267,6 +1230,7 @@ const RAW_LEVELS = [
       {
         id: 'lava_fields_and_geysers',
         at: 0.34,
+        obstacleStyle: 'volcanic_spires',
         skyHex: 0x0f172a,
         fogHex: 0x1e1b4b,
         fogNear: 46,
@@ -1286,6 +1250,7 @@ const RAW_LEVELS = [
       {
         id: 'reykjavik_aurora_night',
         at: 0.7,
+        obstacleStyle: 'volcanic_spires',
         skyHex: 0x090d16,
         fogHex: 0x31104b,
         fogNear: 48,
@@ -1312,16 +1277,12 @@ const RAW_LEVELS = [
     distanceKm: 1500,
     originLandmark: 'reykjavik',
     destinationLandmark: 'dublin',
-    types: ['pipe', 'tower', 'storm'],
-    obstacleTheme: {
-      primary: 0x16a34a,
-      secondary: 0x14532d,
-      accent: 0xfacc15
-    },
+    types: ['origin_building', 'ocean_waves', 'sea_cliffs', 'giant_trees', 'destination_building'],
     stages: [
       {
         id: 'rough_north_atlantic',
         at: 0.0,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0x475569,
         fogHex: 0x94a3b8,
         fogNear: 48,
@@ -1340,6 +1301,7 @@ const RAW_LEVELS = [
       {
         id: 'irish_sea_cliffs',
         at: 0.44,
+        obstacleStyle: 'sea_cliffs',
         skyHex: 0x38bdf8,
         fogHex: 0xbae6fd,
         fogNear: 54,
@@ -1358,6 +1320,7 @@ const RAW_LEVELS = [
       {
         id: 'emerald_meadows',
         at: 0.72,
+        obstacleStyle: 'giant_trees',
         skyHex: 0x38bdf8,
         fogHex: 0xd1fae5,
         fogNear: 58,
@@ -1383,16 +1346,12 @@ const RAW_LEVELS = [
     distanceKm: 460,
     originLandmark: 'dublin',
     destinationLandmark: 'london',
-    types: ['pipe', 'tower', 'ring', 'storm'],
-    obstacleTheme: {
-      primary: 0xf59e0b,
-      secondary: 0xb91c1c,
-      accent: 0xfef08a
-    },
+    types: ['origin_building', 'ocean_waves', 'giant_trees', 'destination_building'],
     stages: [
       {
         id: 'irish_sea_golden_sky',
         at: 0.0,
+        obstacleStyle: 'ocean_waves',
         skyHex: 0xf59e0b,
         fogHex: 0xfef3c7,
         fogNear: 58,
@@ -1411,6 +1370,7 @@ const RAW_LEVELS = [
       {
         id: 'golden_english_countryside',
         at: 0.42,
+        obstacleStyle: 'giant_trees',
         skyHex: 0xfbbf24,
         fogHex: 0xfef3c7,
         fogNear: 58,
@@ -1429,6 +1389,7 @@ const RAW_LEVELS = [
       {
         id: 'triumphant_london_return',
         at: 0.76,
+        obstacleStyle: 'giant_trees',
         skyHex: 0xf59e0b,
         fogHex: 0xfde68a,
         fogNear: 58,
@@ -1454,7 +1415,11 @@ export const LEVELS = RAW_LEVELS.map((raw, index) => {
   const gapSize = Number((4.95 - index * 0.042).toFixed(3));
   const durationSec = (raw.distanceKm / MAX_LEVEL_KM) * MAX_LEVEL_DURATION_SEC;
   const avgSpeed = (speedStart + speedEnd) * 0.5;
-  const obstacleCount = Math.max(7, Math.round((durationSec * avgSpeed) / SPAWN_INTERVAL_DIST));
+  const totalWorldUnits = durationSec * avgSpeed;
+  const obstacleCount = Math.max(
+    6,
+    2 + Math.max(2, Math.round((totalWorldUnits - 32.5) / SPAWN_INTERVAL_DIST))
+  );
   const firstStage = raw.stages[0];
 
   return {
