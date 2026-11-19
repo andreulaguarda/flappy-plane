@@ -4,6 +4,7 @@ import {
   STATE,
   LEVELS,
   KM_PER_SECOND,
+  UNLOCK_ALL_LEVELS,
   getLevel,
   getStageForProgress,
   speedForProgress,
@@ -158,7 +159,7 @@ export class Game {
   }
 
   showMenu() {
-    this.level = getLevel(this.progress.unlocked);
+    this.level = getLevel(Math.min(this.progress.unlocked, LEVELS.length));
     this.resetRun();
     this.state = STATE.MENU;
     this.bestScore = this.bests[this.level.id] || 0;
@@ -182,7 +183,8 @@ export class Game {
   }
 
   startLevel(id) {
-    if (id < 1 || id > this.progress.unlocked) return;
+    if (id < 1 || id > LEVELS.length) return;
+    if (!UNLOCK_ALL_LEVELS && id > this.progress.unlocked) return;
     const level = getLevel(id);
     if (!level) return;
 

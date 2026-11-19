@@ -22,6 +22,10 @@ export const STORAGE_BESTS_KEY = 'flapy_plane_bests_v4';
 export const STORAGE_PROGRESS_KEY = 'flapy_plane_progress_v1';
 export const STORAGE_COINS_KEY = 'flapy_plane_coins_v1';
 
+// Modo testing: permite jugar los 20 niveles desde el principio.
+// Poner a false para restaurar el desbloqueo progresivo de la campaña.
+export const UNLOCK_ALL_LEVELS = true;
+
 export const STATE = {
   MENU: 'MENU',
   TAKEOFF: 'TAKEOFF',

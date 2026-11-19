@@ -1,5 +1,6 @@
 import { t } from './strings.js';
 import { formatDistance, levelDistanceKm } from './distance.js';
+import { UNLOCK_ALL_LEVELS } from './config.js';
 
 export function getMedalInfo(points, total) {
   const ratio = total > 0 ? points / total : 0;
@@ -140,7 +141,7 @@ export class UI {
     this.menuCoins.textContent = coins;
 
     for (const level of levels) {
-      const unlocked = level.id <= progress.unlocked;
+      const unlocked = UNLOCK_ALL_LEVELS || level.id <= progress.unlocked;
       const best = bests[level.id] || 0;
       const targetKm = levelDistanceKm(level);
       const completed = best >= targetKm;
