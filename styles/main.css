@@ -555,108 +555,196 @@ html, body {
   display: none !important;
 }
 
+/* En modo Hangar quitamos el desenfoque del fondo para ver la escena 3D del hangar con total nitidez */
+.overlay-screen.hangar-mode {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.05) 0%, rgba(15, 23, 42, 0.58) 100%);
+}
+
+.menu-card.hangar-active {
+  max-width: 470px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.86) 0%, rgba(15, 23, 42, 0.35) 26%, rgba(15, 23, 42, 0.94) 60%);
+  padding: 18px 18px;
+}
+
+.menu-card.hangar-active .game-title,
+.menu-card.hangar-active .game-subtitle {
+  display: none;
+}
+
 .hangar-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin: 12px 0 6px;
+  gap: 10px;
+  margin: 8px 0 4px;
   text-align: left;
 }
 
-.plane-roster {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
-}
-
-.plane-chip {
-  font-family: inherit;
+/* Ventana superior transparente que enmarca la avioneta 3D girando sobre la plataforma del hangar */
+.hangar-showcase-stage {
+  position: relative;
+  height: 195px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(250, 204, 21, 0.38);
+  background: radial-gradient(circle at 50% 60%, rgba(56, 189, 248, 0.04) 0%, rgba(15, 23, 42, 0.25) 100%);
+  box-shadow: inset 0 0 28px rgba(15, 23, 42, 0.45);
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 8px 9px;
-  border-radius: 12px;
-  border: 1.5px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.05);
-  color: #e2e8f0;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  justify-content: space-between;
+  padding: 10px 12px;
 }
 
-.plane-chip:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.plane-chip.active {
-  border-color: var(--accent);
-  background: rgba(250, 204, 21, 0.15);
-}
-
-.plane-chip.equipped {
-  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.6);
-}
-
-.plane-chip-top {
+.hangar-stage-top {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   width: 100%;
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: var(--accent);
 }
 
-.plane-chip-name {
-  font-size: 0.72rem;
+.hangar-counter-pill {
+  font-size: 0.7rem;
   font-weight: 900;
-  line-height: 1.15;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+}
+
+.hangar-status-pill {
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(250, 204, 21, 0.45);
+  color: #fef08a;
+  text-transform: uppercase;
+}
+
+.hangar-status-pill.selected {
+  border-color: rgba(52, 211, 153, 0.65);
+  color: #6ee7b7;
+}
+
+.hangar-status-pill.locked {
+  border-color: rgba(248, 113, 113, 0.55);
+  color: #fca5a5;
+}
+
+.hangar-arrow-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  background: rgba(15, 23, 42, 0.78);
   color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.hangar-arrow-btn:hover {
+  background: rgba(250, 204, 21, 0.25);
+  border-color: var(--accent);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.hangar-arrow-btn:active {
+  transform: translateY(-50%) scale(0.94);
+}
+
+.hangar-arrow-btn.prev {
+  left: 10px;
+}
+
+.hangar-arrow-btn.next {
+  right: 10px;
+}
+
+.hangar-stage-bottom {
+  text-align: center;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
 }
 
 .plane-detail-card {
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.88);
   border: 1.5px solid rgba(255, 255, 255, 0.16);
   border-radius: 18px;
-  padding: 14px;
+  padding: 13px;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.plane-detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-}
-
 .plane-detail-title {
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 900;
   color: #fef08a;
+  letter-spacing: 0.03em;
 }
 
 .plane-detail-desc {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: #cbd5e1;
-  line-height: 1.35;
+  line-height: 1.32;
   margin-top: 2px;
 }
 
-.plane-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+.hangar-attrs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
 }
 
-.plane-stat-badge {
-  font-size: 0.68rem;
+.hangar-attr-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 7px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hangar-attr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.64rem;
   font-weight: 800;
-  padding: 3px 8px;
+  color: #cbd5e1;
+}
+
+.hangar-attr-val {
+  color: #fef08a;
+  font-weight: 900;
+  font-size: 0.72rem;
+}
+
+.hangar-attr-track {
+  height: 5px;
+  width: 100%;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.hangar-attr-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #38bdf8 0%, #facc15 100%);
 }
 
 .plane-action-btn {
@@ -664,8 +752,8 @@ html, body {
   font-family: inherit;
   border: none;
   border-radius: 13px;
-  padding: 11px 14px;
-  font-size: 0.86rem;
+  padding: 12px 14px;
+  font-size: 0.9rem;
   font-weight: 900;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -688,78 +776,54 @@ html, body {
   cursor: not-allowed;
 }
 
-.upgrade-list {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  margin-top: 2px;
+/* Barra inferior con las 6 miniaturas de avionetas */
+.hangar-thumb-bar {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
 }
 
-.upgrade-row {
+.hangar-thumb-btn {
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 4px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  background: rgba(15, 23, 42, 0.82);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.hangar-thumb-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.hangar-thumb-btn.active {
+  border-color: var(--accent);
+  background: rgba(250, 204, 21, 0.2);
+  color: #ffffff;
+}
+
+.hangar-thumb-btn.equipped {
+  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.65);
+}
+
+.hangar-thumb-icon {
+  width: 28px;
+  height: 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 7px 10px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  justify-content: center;
 }
 
-.upgrade-info {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  flex: 1;
-  min-width: 0;
-}
-
-.upgrade-label-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.68rem;
-  font-weight: 800;
-  color: #e2e8f0;
-}
-
-.upgrade-value {
-  color: var(--accent);
-}
-
-.upgrade-pips {
-  display: flex;
-  gap: 4px;
-}
-
-.upgrade-pip {
-  height: 5px;
-  flex: 1;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.upgrade-pip.filled {
-  background: var(--accent);
-}
-
-.upgrade-btn {
-  font-family: inherit;
-  flex: 0 0 auto;
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(250, 204, 21, 0.45);
-  background: rgba(250, 204, 21, 0.16);
-  color: #fef08a;
-  font-size: 0.68rem;
+.hangar-thumb-num {
+  font-size: 0.58rem;
   font-weight: 900;
-  text-transform: uppercase;
-  cursor: pointer;
+  color: #fef08a;
+  line-height: 1;
 }
-
-.upgrade-btn:disabled {
-  opacity: 0.42;
-  cursor: not-allowed;
-}
-
-
-

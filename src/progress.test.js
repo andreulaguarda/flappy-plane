@@ -15,8 +15,7 @@ import {
   loadHangar,
   saveHangar,
   selectPlane,
-  unlockPlane,
-  upgradePlaneStat
+  unlockPlane
 } from './progress.js';
 
 function createStorage(entries = {}) {
@@ -115,47 +114,36 @@ describe('monedas', () => {
   });
 });
 
-describe('hangar y mejoras de aviones', () => {
-  it('desbloquea por defecto el avión inicial atlas_cargo con mejoras en nivel 1', () => {
+describe('hangar de avionetas', () => {
+  it('desbloquea y selecciona por defecto Aero Classic', () => {
     const hangar = normalizeHangar(null);
-    expect(hangar.selectedPlane).toBe('atlas_cargo');
-    expect(hangar.unlockedPlanes).toContain('atlas_cargo');
-    expect(hangar.upgrades.atlas_cargo).toEqual({
-      magnet: 1,
-      multiplier: 1,
-      shield: 1,
-      size: 1,
-      weight: 1
-    });
+    expect(hangar.selectedPlane).toBe('aero_classic');
+    expect(hangar.unlockedPlanes).toEqual(['aero_classic']);
   });
 
-  it('permite comprar y seleccionar un avión nuevo con monedas suficientes', () => {
+  it('permite comprar y seleccionar una avioneta nueva con monedas suficientes', () => {
     const initial = normalizeHangar(null);
-    const failRes = unlockPlane(initial, 10, 'aero_classic');
+    const failRes = unlockPlane(initial, 80, 'sky_cub');
     expect(failRes.success).toBe(false);
 
-    const okRes = unlockPlane(initial, 50, 'aero_classic');
+    const okRes = unlockPlane(initial, 200, 'sky_cub');
     expect(okRes.success).toBe(true);
-    expect(okRes.wallet).toBe(25);
-    expect(okRes.hangar.selectedPlane).toBe('aero_classic');
-    expect(okRes.hangar.unlockedPlanes).toContain('aero_classic');
+    expect(okRes.wallet).toBe(50);
+    expect(okRes.hangar.selectedPlane).toBe('sky_cub');
+    expect(okRes.hangar.unlockedPlanes).toContain('sky_cub');
 
-    const switched = selectPlane(okRes.hangar, 'atlas_cargo');
-    expect(switched.selectedPlane).toBe('atlas_cargo');
+    const switched = selectPlane(okRes.hangar, 'aero_classic');
+    expect(switched.selectedPlane).toBe('aero_classic');
   });
 
-  it('mejora atributos individuales por avión descontando monedas y guarda en storage', () => {
+  it('guarda y recupera el estado del hangar en storage', () => {
     const storage = createStorage();
-    let hangar = loadHangar(storage);
-    let wallet = 100;
+    const res = unlockPlane(loadHangar(storage), 500, 'baron_vintage');
+    expect(res.success).toBe(true);
+    saveHangar(res.hangar, storage);
 
-    const up1 = upgradePlaneStat(hangar, wallet, 'atlas_cargo', 'magnet');
-    expect(up1.success).toBe(true);
-    expect(up1.hangar.upgrades.atlas_cargo.magnet).toBe(2);
-    expect(up1.hangar.upgrades.aero_classic.magnet).toBe(1);
-
-    saveHangar(up1.hangar, storage);
     const loaded = loadHangar(storage);
-    expect(loaded.upgrades.atlas_cargo.magnet).toBe(2);
+    expect(loaded.selectedPlane).toBe('baron_vintage');
+    expect(loaded.unlockedPlanes).toContain('baron_vintage');
   });
 });

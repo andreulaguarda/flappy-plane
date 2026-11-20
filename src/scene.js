@@ -48,6 +48,8 @@ export function createWorld(canvas) {
   let planeAnchorX = -3.8;
   const cameraBasePos = new THREE.Vector3(0, 0.8, 25);
   const cameraLookTarget = new THREE.Vector3(1.2, 0.3, 0);
+  const currentLookTarget = new THREE.Vector3(1.2, 0.3, 0);
+  let hangarView = false;
   let screenShakeTime = 0;
   let cameraInitialized = false;
 
@@ -80,7 +82,8 @@ export function createWorld(canvas) {
 
     if (!cameraInitialized) {
       camera.position.copy(cameraBasePos);
-      camera.lookAt(cameraLookTarget);
+      currentLookTarget.copy(cameraLookTarget);
+      camera.lookAt(currentLookTarget);
       cameraInitialized = true;
     }
   }
@@ -188,7 +191,29 @@ export function createWorld(canvas) {
     screenShakeTime = 0;
   }
 
+  function setHangarView(active) {
+    hangarView = Boolean(active);
+  }
+
   function updateCamera(dt, planeY) {
+    if (hangarView) {
+      const hangarCamX = planeAnchorX;
+      const hangarCamY = planeY + 0.65;
+      const hangarCamZ = 9.4;
+      const targetLookX = planeAnchorX;
+      const targetLookY = planeY - 0.68;
+      const targetLookZ = 0;
+
+      camera.position.x = THREE.MathUtils.lerp(camera.position.x, hangarCamX, dt * 8);
+      camera.position.y = THREE.MathUtils.lerp(camera.position.y, hangarCamY, dt * 8);
+      camera.position.z = THREE.MathUtils.lerp(camera.position.z, hangarCamZ, dt * 8);
+      currentLookTarget.x = THREE.MathUtils.lerp(currentLookTarget.x, targetLookX, dt * 8);
+      currentLookTarget.y = THREE.MathUtils.lerp(currentLookTarget.y, targetLookY, dt * 8);
+      currentLookTarget.z = THREE.MathUtils.lerp(currentLookTarget.z, targetLookZ, dt * 8);
+      camera.lookAt(currentLookTarget);
+      return;
+    }
+
     if (screenShakeTime > 0) {
       screenShakeTime -= dt;
       const intensity = screenShakeTime * 1.4;
@@ -203,7 +228,8 @@ export function createWorld(canvas) {
       camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetCamY, dt * 6);
       camera.position.z = THREE.MathUtils.lerp(camera.position.z, cameraBasePos.z, dt * 6);
     }
-    camera.lookAt(cameraLookTarget);
+    currentLookTarget.lerp(cameraLookTarget, dt * 8);
+    camera.lookAt(currentLookTarget);
   }
 
   window.addEventListener('resize', updateResponsive);
@@ -220,6 +246,7 @@ export function createWorld(canvas) {
     },
     setPhase,
     setTimeOfDay,
+    setHangarView,
     updateColors,
     updateCamera,
     shake,

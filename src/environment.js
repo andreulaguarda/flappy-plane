@@ -495,6 +495,105 @@ export function createEnvironment(scene) {
 
   envGroup.add(runwayGroup);
 
+  // Escenario 3D Low-Poly del Hangar (plataforma giratoria, estructura e iluminación)
+  const hangarStageGroup = new THREE.Group();
+  hangarStageGroup.position.set(-4.5, CONFIG.floorY, 0);
+  hangarStageGroup.visible = false;
+
+  const hangarFloor = new THREE.Mesh(
+    new THREE.BoxGeometry(11.5, 0.16, 7.2),
+    new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.78, flatShading: true })
+  );
+  hangarFloor.position.set(0, 0.08, -0.6);
+  hangarFloor.receiveShadow = true;
+  hangarStageGroup.add(hangarFloor);
+
+  // Pared trasera y cerchas metálicas del hangar
+  const backWall = new THREE.Mesh(
+    new THREE.BoxGeometry(11.2, 6.2, 0.4),
+    new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8, flatShading: true })
+  );
+  backWall.position.set(0, 3.1, -3.2);
+  hangarStageGroup.add(backWall);
+
+  const brickWainscot = new THREE.Mesh(
+    new THREE.BoxGeometry(11.0, 1.8, 0.46),
+    new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.82, flatShading: true })
+  );
+  brickWainscot.position.set(0, 0.9, -3.18);
+  hangarStageGroup.add(brickWainscot);
+
+  const trussMat = new THREE.MeshStandardMaterial({
+    color: 0x475569,
+    roughness: 0.55,
+    metalness: 0.3,
+    flatShading: true
+  });
+  const hangarGlowMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+  const redPropMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.5, flatShading: true });
+  const goldPropMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4, flatShading: true });
+  const crateMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.78, flatShading: true });
+
+  [-4.4, -2.2, 0, 2.2, 4.4].forEach((px) => {
+    const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.36, 5.8, 0.55), trussMat);
+    pillar.position.set(px, 2.9, -3.0);
+    hangarStageGroup.add(pillar);
+  });
+
+  [-2.8, 0, 2.8].forEach((wx) => {
+    const win = new THREE.Mesh(new THREE.BoxGeometry(1.45, 1.15, 0.1), hangarGlowMat);
+    win.position.set(wx, 3.2, -2.96);
+    hangarStageGroup.add(win);
+  });
+
+  const roofBeam = new THREE.Mesh(new THREE.BoxGeometry(11.4, 0.42, 0.8), trussMat);
+  roofBeam.position.set(0, 5.2, -2.8);
+  hangarStageGroup.add(roofBeam);
+
+  // Utilería low-poly del hangar (cajas, bidones de combustible y carro de herramientas)
+  const toolCabinet = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 0.75), redPropMat);
+  toolCabinet.position.set(-3.4, 0.65, -1.8);
+  const crate = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.95), crateMat);
+  crate.position.set(-2.2, 0.56, -2.1);
+  const drum1 = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 1.05, 10), redPropMat);
+  drum1.position.set(3.2, 0.6, -1.9);
+  const drum2 = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 1.05, 10), goldPropMat);
+  drum2.position.set(4.0, 0.6, -2.1);
+  hangarStageGroup.add(toolCabinet, crate, drum1, drum2);
+
+  // Plataforma giratoria central (Turntable)
+  const turntableGroup = new THREE.Group();
+  turntableGroup.position.set(0, 0.16, 0);
+  const tableRim = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.38, 2.52, 0.26, 16),
+    goldPropMat
+  );
+  const tableDeck = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.15, 2.15, 0.32, 16),
+    new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, flatShading: true })
+  );
+  tableDeck.receiveShadow = true;
+  turntableGroup.add(tableRim, tableDeck);
+
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    const lightDot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.12, 0.35, 6),
+      hangarGlowMat
+    );
+    lightDot.position.set(Math.cos(angle) * 2.24, 0.02, Math.sin(angle) * 2.24);
+    turntableGroup.add(lightDot);
+  }
+  hangarStageGroup.add(turntableGroup);
+  envGroup.add(hangarStageGroup);
+
+  function setHangarMode(active, anchorX = -4.5) {
+    const isHangar = Boolean(active);
+    hangarStageGroup.visible = isHangar;
+    hangarStageGroup.position.x = anchorX;
+    landmarkSlot.visible = !isHangar;
+  }
+
   function setRunwayLandmark(landmarkId) {
     while (landmarkSlot.children.length > 0) {
       landmarkSlot.remove(landmarkSlot.children[0]);
@@ -785,6 +884,10 @@ export function createEnvironment(scene) {
       });
     }
 
+    if (hangarStageGroup.visible) {
+      turntableGroup.rotation.y += dt * 0.65;
+    }
+
     // Animación de olas, barcos y peces submarinos en los bloques de mar
     for (const chunk of groundChunks) {
       if (chunk.userData.isWater) {
@@ -848,6 +951,7 @@ export function createEnvironment(scene) {
     resetRunway,
     setLevel,
     setStage,
-    setTimeOfDay
+    setTimeOfDay,
+    setHangarMode
   };
 }

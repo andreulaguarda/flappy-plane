@@ -26,7 +26,6 @@ import {
   saveHangar,
   selectPlane,
   unlockPlane,
-  upgradePlaneStat,
   unlockNextLevel,
   updateBests
 } from './progress.js';
@@ -66,6 +65,7 @@ export class Game {
     this.wallet = loadCoins();
     this.hangar = loadHangar();
     this.planeStats = this.computeActivePlaneStats(this.hangar.selectedPlane);
+    this.hangarViewActive = false;
     this.runCoins = 0;
 
     this.runwayPlaneY = CONFIG.floorY + 0.88;
@@ -116,13 +116,15 @@ export class Game {
         this.showMenu();
       },
       onPreviewPlane: (planeId) => {
+        this.sound.playClick();
         this.applyPlaneVisuals(planeId);
+      },
+      onHangarViewChange: (isHangar, previewPlaneId) => {
+        this.sound.playClick();
+        this.setHangarViewMode(isHangar, previewPlaneId);
       },
       onEquipOrBuyPlane: (planeId) => {
         this.handleEquipOrBuyPlane(planeId);
-      },
-      onUpgradePlane: (planeId, statKey) => {
-        this.handleUpgradePlane(planeId, statKey);
       }
     });
 
@@ -133,8 +135,7 @@ export class Game {
   }
 
   computeActivePlaneStats(planeId = this.hangar.selectedPlane) {
-    const upgrades = this.hangar.upgrades?.[planeId];
-    return getPlaneStats(planeId, upgrades);
+    return getPlaneStats(planeId);
   }
 
   applyPlaneVisuals(planeId = this.hangar.selectedPlane) {
@@ -143,6 +144,23 @@ export class Game {
     this.plane.scale.setScalar(stats.sizeMultiplier);
     this.plane.userData.setShieldActive?.(false, this.elapsedTime);
     return stats;
+  }
+
+  setHangarViewMode(isHangar, previewPlaneId = this.hangar.selectedPlane) {
+    this.hangarViewActive = Boolean(isHangar);
+    this.world.setHangarView?.(this.hangarViewActive);
+    this.environment.setHangarMode?.(this.hangarViewActive, this.world.planeAnchorX);
+    this.applyPlaneVisuals(previewPlaneId);
+
+    if (this.hangarViewActive) {
+      this.planeY = this.runwayPlaneY + 0.34;
+      this.plane.position.set(this.world.planeAnchorX, this.planeY, 0);
+      this.plane.rotation.set(0.06, -0.45, 0.05);
+    } else {
+      this.planeY = this.runwayPlaneY;
+      this.plane.position.set(this.world.planeAnchorX, this.planeY, 0);
+      this.plane.rotation.set(0, 0, 0.06);
+    }
   }
 
   handleEquipOrBuyPlane(planeId) {
@@ -170,29 +188,6 @@ export class Game {
     });
   }
 
-  handleUpgradePlane(planeId, statKey) {
-    const res = upgradePlaneStat(this.hangar, this.wallet, planeId, statKey);
-    if (!res.success) return;
-
-    this.hangar = res.hangar;
-    this.wallet = res.wallet;
-    this.sound.playCoin();
-
-    this.applyPlaneVisuals(planeId);
-    this.planeStats = this.computeActivePlaneStats(this.hangar.selectedPlane);
-
-    saveHangar(this.hangar);
-    saveCoins(this.wallet);
-    this.ui.setCoins(this.wallet);
-    this.ui.showMenu({
-      levels: LEVELS,
-      progress: this.progress,
-      bests: this.bests,
-      coins: this.wallet,
-      hangar: this.hangar
-    });
-  }
-
   start() {
     const animate = () => {
       requestAnimationFrame(animate);
@@ -206,6 +201,9 @@ export class Game {
     this.coins.clear();
     this.particles.clear();
 
+    this.hangarViewActive = false;
+    this.world.setHangarView?.(false);
+    this.environment.setHangarMode?.(false, this.world.planeAnchorX);
     this.planeStats = this.applyPlaneVisuals(this.hangar.selectedPlane);
 
     this.distanceKm = 0;
@@ -247,6 +245,10 @@ export class Game {
     this.resetRun();
     this.state = STATE.MENU;
     this.bestScore = this.bests[this.level.id] || 0;
+
+    if (this.ui.activeTab === 'hangar') {
+      this.setHangarViewMode(true, this.ui.previewPlaneId || this.hangar.selectedPlane);
+    }
 
     this.ui.setDistance(0);
     this.ui.setBest(this.bestScore);
@@ -306,6 +308,7 @@ export class Game {
 
   flap() {
     if (this.state !== STATE.PLAYING) return;
+    // Físicas de vuelo unificadas e idénticas para todas las avionetas
     this.planeVelY = CONFIG.jumpImpulse;
     this.sound.playFlap();
     this.particles.spawnSmoke(this.plane.position.x - 1.2, this.plane.position.y - 0.1, 0);
@@ -433,7 +436,12 @@ export class Game {
     } else if (this.state === STATE.GAMEOVER) {
       this.propeller.rotation.x += 8 * dt;
     } else if (this.state === STATE.MENU) {
-      this.propeller.rotation.x += 5 * dt;
+      this.propeller.rotation.x += 9 * dt;
+      if (this.hangarViewActive) {
+        this.plane.rotation.y += dt * 0.65;
+        this.plane.position.y =
+          this.runwayPlaneY + 0.34 + Math.sin(this.elapsedTime * 2.2) * 0.04;
+      }
     }
 
     let activeScroll = 0;
@@ -578,18 +586,17 @@ export class Game {
 
   updatePlaying(dt) {
     const planeRadius = this.planeStats.hitRadius;
-    const planeGravity = this.planeStats.gravity;
-    const planeMaxFall = this.planeStats.maxFallSpeed;
 
     if (this.shieldTimer > 0) {
       this.shieldTimer = Math.max(0, this.shieldTimer - dt);
       this.plane.userData.setShieldActive?.(this.shieldTimer > 0, this.elapsedTime);
     }
 
-    this.planeVelY += planeGravity * dt;
+    // Físicas de vuelo unificadas: misma gravedad y caída máxima para todas las avionetas
+    this.planeVelY += CONFIG.gravity * dt;
     this.planeVelY = THREE.MathUtils.clamp(
       this.planeVelY,
-      planeMaxFall,
+      CONFIG.maxFallSpeed,
       CONFIG.maxRiseSpeed
     );
     this.planeY += this.planeVelY * dt;
@@ -818,7 +825,7 @@ export class Game {
 
     const r = this.planeStats.hitRadius;
     if (this.planeY - r > CONFIG.floorY) {
-      this.planeVelY += this.planeStats.gravity * dt;
+      this.planeVelY += CONFIG.gravity * dt;
       this.planeY += this.planeVelY * dt;
       this.plane.position.y = Math.max(CONFIG.floorY + r, this.planeY);
       this.plane.rotation.z -= 5.5 * dt;

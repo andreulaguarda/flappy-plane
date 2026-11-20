@@ -7,11 +7,7 @@ import {
 import {
   PLANES,
   DEFAULT_PLANE_ID,
-  UPGRADE_TYPES,
-  MAX_UPGRADE_LEVEL,
-  getPlaneConfig,
-  getUpgradeCost,
-  normalizePlaneUpgrades
+  getPlaneConfig
 } from './planes.js';
 
 export function normalizeProgress(data, maxLevel) {
@@ -116,15 +112,9 @@ export function normalizeHangar(data) {
     ? data.selectedPlane
     : DEFAULT_PLANE_ID;
 
-  const upgrades = {};
-  for (const plane of PLANES) {
-    upgrades[plane.id] = normalizePlaneUpgrades(data?.upgrades?.[plane.id]);
-  }
-
   return {
     selectedPlane,
-    unlockedPlanes,
-    upgrades
+    unlockedPlanes
   };
 }
 
@@ -166,43 +156,5 @@ export function unlockPlane(hangar, wallet, planeId) {
     success: true,
     hangar: nextHangar,
     wallet: safeWallet - plane.unlockCost
-  };
-}
-
-export function upgradePlaneStat(hangar, wallet, planeId, statKey) {
-  const current = normalizeHangar(hangar);
-  const safeWallet = normalizeCoins(wallet);
-
-  if (!current.unlockedPlanes.includes(planeId) || !UPGRADE_TYPES.includes(statKey)) {
-    return { success: false, hangar: current, wallet: safeWallet };
-  }
-
-  const planeUpgrades = current.upgrades[planeId] || normalizePlaneUpgrades(null);
-  const currentLvl = planeUpgrades[statKey] || 1;
-  if (currentLvl >= MAX_UPGRADE_LEVEL) {
-    return { success: false, hangar: current, wallet: safeWallet };
-  }
-
-  const cost = getUpgradeCost(currentLvl);
-  if (cost === null || safeWallet < cost) {
-    return { success: false, hangar: current, wallet: safeWallet };
-  }
-
-  const nextHangar = {
-    ...current,
-    upgrades: {
-      ...current.upgrades,
-      [planeId]: {
-        ...planeUpgrades,
-        [statKey]: currentLvl + 1
-      }
-    }
-  };
-
-  return {
-    success: true,
-    hangar: nextHangar,
-    wallet: safeWallet - cost,
-    cost
   };
 }
