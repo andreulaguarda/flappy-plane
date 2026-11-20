@@ -16,14 +16,6 @@ export function getMedalInfo(points, total) {
   return { icon: '🛩️', text: t('medalCadet') };
 }
 
-function renderMiniPlaneSvg(color = '#facc15') {
-  return `
-    <svg viewBox="0 0 36 22" width="26" height="18" aria-hidden="true">
-      <path d="M3 12 L12 10 L17 3 L21 3 L19 10 L29 9 L33 11 L29 13 L19 13 L21 19 L17 19 L12 13 L6 14 L3 17 Z" fill="${color}" stroke="#0f172a" stroke-width="1.4" stroke-linejoin="round"/>
-    </svg>
-  `;
-}
-
 export class UI {
   constructor() {
     this.uiLayer = document.getElementById('ui-layer');
@@ -56,16 +48,11 @@ export class UI {
     this.btnMenuComplete = document.getElementById('btn-menu-complete');
     this.btnPause = document.getElementById('btn-pause');
     this.btnSound = document.getElementById('btn-sound');
-    this.btnSoundMenu = document.getElementById('btn-sound-menu');
 
     this.soundIcons = [
       {
         on: document.getElementById('icon-sound-on'),
         off: document.getElementById('icon-sound-off')
-      },
-      {
-        on: document.getElementById('icon-sound-on-menu'),
-        off: document.getElementById('icon-sound-off-menu')
       }
     ];
 
@@ -112,7 +99,6 @@ export class UI {
     this.btnMenuComplete.addEventListener('click', wrap(handlers.onMenu));
     this.btnPause.addEventListener('click', wrap(handlers.onPauseToggle));
     this.btnSound.addEventListener('click', wrap(handlers.onSoundToggle));
-    this.btnSoundMenu.addEventListener('click', wrap(handlers.onSoundToggle));
 
     this.tabStages?.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -135,12 +121,6 @@ export class UI {
       if (navBtn) {
         const dir = navBtn.dataset.hangarNav === 'next' ? 1 : -1;
         this.stepPreviewPlane(dir);
-        return;
-      }
-
-      const thumb = event.target.closest('[data-plane-id]');
-      if (thumb) {
-        this.selectPreviewPlane(thumb.dataset.planeId);
         return;
       }
 
@@ -182,10 +162,10 @@ export class UI {
     if (!isHangar && this.lastMenuData?.hangar) {
       this.previewPlaneId = this.lastMenuData.hangar.selectedPlane;
     }
-    this.handlers?.onHangarViewChange?.(isHangar, this.previewPlaneId);
     if (isHangar && this.lastMenuData) {
       this.renderHangar(this.lastMenuData);
     }
+    this.handlers?.onHangarViewChange?.(isHangar, this.previewPlaneId);
   }
 
   setBest(km) {
@@ -266,7 +246,8 @@ export class UI {
     }
 
     // Barras visuales de los 4 atributos fijos del avión
-    const sizeAgilityPct = Math.round(((1.05 - stats.sizeMultiplier) / 0.32) * 100);
+    const sizeMeters = Math.round(15 * Math.pow(stats.sizeMultiplier, 4));
+    const sizePct = Math.round(((1.05 - stats.sizeMultiplier) / 0.32) * 100);
     const magnetPct = Math.round((stats.magnetRadius / 6.2) * 100);
     const multPct = Math.round((stats.coinMultiplier / 4) * 100);
     const shieldPct = Math.round((stats.shieldChance / 0.5) * 100);
@@ -274,8 +255,8 @@ export class UI {
     const attrs = [
       {
         label: t('statSize'),
-        value: `${Math.round(stats.sizeMultiplier * 100)}%`,
-        pct: Math.min(100, Math.max(15, sizeAgilityPct))
+        value: `${sizeMeters} mt`,
+        pct: Math.min(100, Math.max(15, sizePct))
       },
       {
         label: t('statMagnet'),
@@ -310,19 +291,6 @@ export class UI {
       )
       .join('');
 
-    const thumbsHtml = PLANES.map((p, idx) => {
-      const unlocked = hangar.unlockedPlanes.includes(p.id);
-      const equipped = hangar.selectedPlane === p.id;
-      const active = plane.id === p.id;
-      const stateBadge = equipped ? '✓' : unlocked ? `#${idx + 1}` : '🔒';
-      return `
-        <button type="button" class="hangar-thumb-btn${active ? ' active' : ''}${equipped ? ' equipped' : ''}" data-plane-id="${p.id}" title="${t(p.nameKey)}">
-          <span class="hangar-thumb-icon">${renderMiniPlaneSvg(p.badgeColor)}</span>
-          <span class="hangar-thumb-num">${stateBadge}</span>
-        </button>
-      `;
-    }).join('');
-
     this.hangarPanel.innerHTML = `
       <div class="hangar-showcase-stage">
         <div class="hangar-stage-top">
@@ -341,9 +309,14 @@ export class UI {
         <div class="hangar-attrs-grid">${attrsHtml}</div>
         ${actionBtnHtml}
       </div>
-
-      <div class="hangar-thumb-bar">${thumbsHtml}</div>
     `;
+  }
+
+  getHangarStageCenterY() {
+    const stage = this.hangarPanel?.querySelector('.hangar-showcase-stage');
+    if (!stage) return 0.4;
+    const rect = stage.getBoundingClientRect();
+    return (rect.top + rect.height * 0.5) / Math.max(1, window.innerHeight);
   }
 
   showMenu({ levels, progress, bests, coins, hangar }) {

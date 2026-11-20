@@ -9,7 +9,7 @@ const EN = {
   menuTitle: 'FLAPPY PLANE',
   menuSubtitle: '20 stages around the globe. Select a route or visit the hangar.',
   tabStages: '20 STAGES',
-  tabHangar: '3D HANGAR (6 PLANES)',
+  tabHangar: 'HANGAR',
   levelBest: 'BEST {distance} / {total}',
   locked: 'LOCKED · {total}',
 
@@ -26,10 +26,10 @@ const EN = {
   plane6Name: 'COMET RACER',
   plane6Desc: 'Ultra-compact air-race championship plane. Tiny hitbox, 4x coins and 50% shield.',
 
-  statSize: 'HITBOX / SIZE',
+  statSize: 'SIZE',
   statMagnet: 'COIN MAGNET',
   statMultiplier: 'COIN MULTIPLIER',
-  statShield: 'EMERGENCY SHIELD',
+  statShield: 'SHIELD PROBABILITY',
 
   statusSelected: 'SELECTED ✓',
   statusUnlocked: 'UNLOCKED',

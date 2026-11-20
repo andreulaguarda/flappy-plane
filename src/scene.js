@@ -50,6 +50,7 @@ export function createWorld(canvas) {
   const cameraLookTarget = new THREE.Vector3(1.2, 0.3, 0);
   const currentLookTarget = new THREE.Vector3(1.2, 0.3, 0);
   let hangarView = false;
+  let hangarFocusY = 0.4;
   let screenShakeTime = 0;
   let cameraInitialized = false;
 
@@ -191,17 +192,25 @@ export function createWorld(canvas) {
     screenShakeTime = 0;
   }
 
-  function setHangarView(active) {
+  function setHangarView(active, focusY = hangarFocusY) {
     hangarView = Boolean(active);
+    if (Number.isFinite(focusY)) {
+      hangarFocusY = THREE.MathUtils.clamp(focusY, 0.15, 0.85);
+    }
   }
 
   function updateCamera(dt, planeY) {
     if (hangarView) {
       const hangarCamX = planeAnchorX;
-      const hangarCamY = planeY + 0.65;
-      const hangarCamZ = 9.4;
+      const hangarCamY = planeY + 0.55;
+      const hangarCamZ = 17.5;
+      const halfFov = THREE.MathUtils.degToRad(camera.fov * 0.5);
+      const ndcY = 1 - 2 * hangarFocusY;
+      const k = ndcY * Math.tan(halfFov);
+      const tanPlane = (planeY - hangarCamY) / hangarCamZ;
+      const tanTarget = (tanPlane - k) / (1 + k * tanPlane);
       const targetLookX = planeAnchorX;
-      const targetLookY = planeY - 0.68;
+      const targetLookY = hangarCamY + tanTarget * hangarCamZ;
       const targetLookZ = 0;
 
       camera.position.x = THREE.MathUtils.lerp(camera.position.x, hangarCamX, dt * 8);

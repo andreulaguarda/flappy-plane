@@ -130,6 +130,12 @@ export class Game {
 
     bindInput(this);
 
+    window.addEventListener('resize', () => {
+      if (this.hangarViewActive) {
+        this.world.setHangarView?.(true, this.ui.getHangarStageCenterY());
+      }
+    });
+
     this.ui.setSoundMuted(this.sound.muted);
     this.showMenu();
   }
@@ -148,7 +154,10 @@ export class Game {
 
   setHangarViewMode(isHangar, previewPlaneId = this.hangar.selectedPlane) {
     this.hangarViewActive = Boolean(isHangar);
-    this.world.setHangarView?.(this.hangarViewActive);
+    this.world.setHangarView?.(
+      this.hangarViewActive,
+      this.hangarViewActive ? this.ui.getHangarStageCenterY() : undefined
+    );
     this.environment.setHangarMode?.(this.hangarViewActive, this.world.planeAnchorX);
     this.applyPlaneVisuals(previewPlaneId);
 
@@ -246,10 +255,6 @@ export class Game {
     this.state = STATE.MENU;
     this.bestScore = this.bests[this.level.id] || 0;
 
-    if (this.ui.activeTab === 'hangar') {
-      this.setHangarViewMode(true, this.ui.previewPlaneId || this.hangar.selectedPlane);
-    }
-
     this.ui.setDistance(0);
     this.ui.setBest(this.bestScore);
     this.ui.setCoins(this.wallet);
@@ -268,6 +273,10 @@ export class Game {
       coins: this.wallet,
       hangar: this.hangar
     });
+
+    if (this.ui.activeTab === 'hangar') {
+      this.setHangarViewMode(true, this.ui.previewPlaneId || this.hangar.selectedPlane);
+    }
   }
 
   startLevel(id) {

@@ -519,10 +519,6 @@ html, body {
   color: var(--accent);
 }
 
-.menu-sound {
-  margin: 10px auto 0;
-}
-
 .menu-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -559,18 +555,41 @@ html, body {
 .overlay-screen.hangar-mode {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.05) 0%, rgba(15, 23, 42, 0.58) 100%);
+  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.01) 0%, rgba(15, 23, 42, 0.52) 100%);
 }
 
 .menu-card.hangar-active {
   max-width: 470px;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.86) 0%, rgba(15, 23, 42, 0.35) 26%, rgba(15, 23, 42, 0.94) 60%);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
   padding: 18px 18px;
 }
 
 .menu-card.hangar-active .game-title,
 .menu-card.hangar-active .game-subtitle {
   display: none;
+}
+
+/* La barra de pestañas necesita fondo propio para que las ventanas del hangar 3D no se transparenten detrás */
+.menu-card.hangar-active .menu-tabs {
+  padding: 6px;
+  margin-bottom: 0;
+  border-radius: 17px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.92);
+}
+
+.menu-card.hangar-active .hangar-panel {
+  margin-top: 6px;
+}
+
+.menu-card.hangar-active .menu-tab {
+  background: rgba(30, 41, 59, 0.96);
+}
+
+.menu-card.hangar-active .menu-tab.active {
+  background: rgba(250, 204, 21, 0.2);
 }
 
 .hangar-panel {
@@ -586,9 +605,9 @@ html, body {
   position: relative;
   height: 195px;
   border-radius: 20px;
-  border: 1.5px solid rgba(250, 204, 21, 0.38);
-  background: radial-gradient(circle at 50% 60%, rgba(56, 189, 248, 0.04) 0%, rgba(15, 23, 42, 0.25) 100%);
-  box-shadow: inset 0 0 28px rgba(15, 23, 42, 0.45);
+  border: 1.5px solid rgba(250, 204, 21, 0.65);
+  background: radial-gradient(ellipse at center, transparent 48%, rgba(15, 23, 42, 0.38) 100%);
+  box-shadow: 0 0 26px rgba(56, 189, 248, 0.12), inset 0 0 22px rgba(15, 23, 42, 0.3);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -774,56 +793,4 @@ html, body {
 .plane-action-btn:disabled:not(.equipped) {
   opacity: 0.45;
   cursor: not-allowed;
-}
-
-/* Barra inferior con las 6 miniaturas de avionetas */
-.hangar-thumb-bar {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
-}
-
-.hangar-thumb-btn {
-  font-family: inherit;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  padding: 7px 4px;
-  border-radius: 12px;
-  border: 1.5px solid rgba(255, 255, 255, 0.16);
-  background: rgba(15, 23, 42, 0.82);
-  color: #cbd5e1;
-  cursor: pointer;
-  transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease;
-}
-
-.hangar-thumb-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.hangar-thumb-btn.active {
-  border-color: var(--accent);
-  background: rgba(250, 204, 21, 0.2);
-  color: #ffffff;
-}
-
-.hangar-thumb-btn.equipped {
-  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.65);
-}
-
-.hangar-thumb-icon {
-  width: 28px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hangar-thumb-num {
-  font-size: 0.58rem;
-  font-weight: 900;
-  color: #fef08a;
-  line-height: 1;
 }
