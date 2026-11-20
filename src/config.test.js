@@ -179,42 +179,41 @@ describe('getTimeOfDayPhase', () => {
   });
 });
 
-describe('PLANES (Catálogo de 9 aviones y mejoras)', () => {
-  it('define 9 aviones seleccionables con textos traducidos y modelos 3D', () => {
-    expect(PLANES).toHaveLength(9);
+describe('PLANES (Catálogo de 6 avionetas con físicas unificadas y atributos fijos)', () => {
+  it('define 6 avionetas seleccionables con Aero Classic inicial sin ventajas y Baron Vintage', () => {
+    expect(PLANES).toHaveLength(6);
+    expect(PLANES[0].id).toBe('aero_classic');
     expect(PLANES[0].unlockCost).toBe(0);
+    expect(PLANES[0].sizeMultiplier).toBe(1.0);
+    expect(PLANES[0].magnetRadius).toBe(0);
+    expect(PLANES[0].coinMultiplier).toBe(1);
+    expect(PLANES[0].shieldChance).toBe(0);
+
+    expect(PLANES.some((p) => p.id === 'baron_vintage')).toBe(true);
 
     const planeCtrl = createPlane();
-    for (const plane of PLANES) {
+    for (let i = 0; i < PLANES.length; i++) {
+      const plane = PLANES[i];
       expect(STRINGS.en[plane.nameKey]).toBeTruthy();
       expect(STRINGS.en[plane.descKey]).toBeTruthy();
       planeCtrl.setModel(plane.id);
       expect(planeCtrl.group.children.length).toBeGreaterThan(0);
+
+      if (i > 0) {
+        expect(plane.unlockCost).toBeGreaterThan(PLANES[i - 1].unlockCost);
+        expect(plane.unlockCost).toBeGreaterThanOrEqual(150);
+      }
     }
   });
 
-  it('mejora los 5 atributos propios de cada avión del nivel 1 al 5', () => {
-    const base = getPlaneStats('atlas_cargo', {
-      magnet: 1,
-      multiplier: 1,
-      shield: 1,
-      size: 1,
-      weight: 1
-    });
-    const maxed = getPlaneStats('atlas_cargo', {
-      magnet: 5,
-      multiplier: 5,
-      shield: 5,
-      size: 5,
-      weight: 5
-    });
+  it('mantiene físicas de vuelo idénticas entre avionetas (definidas en CONFIG) y mejora atributos fijos en modelos superiores', () => {
+    const starter = getPlaneStats('aero_classic');
+    const topRacer = getPlaneStats('apex_racer');
 
-    expect(maxed.hitRadius).toBeLessThan(base.hitRadius);
-    expect(maxed.weightMultiplier).toBeLessThan(base.weightMultiplier);
-    expect(Math.abs(maxed.gravity)).toBeLessThan(Math.abs(base.gravity));
-    expect(maxed.magnetRadius).toBeGreaterThan(base.magnetRadius);
-    expect(maxed.coinMultiplier).toBe(5);
-    expect(maxed.shieldChance).toBeGreaterThan(base.shieldChance);
+    expect(topRacer.hitRadius).toBeLessThan(starter.hitRadius);
+    expect(topRacer.magnetRadius).toBeGreaterThan(starter.magnetRadius);
+    expect(topRacer.coinMultiplier).toBeGreaterThan(starter.coinMultiplier);
+    expect(topRacer.shieldChance).toBeGreaterThan(starter.shieldChance);
   });
 });
 
