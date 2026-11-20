@@ -20,6 +20,8 @@ import {
   createObstacleSystem,
   resolveObstacleStyle
 } from './obstacles.js';
+import { PLANES, getPlaneStats } from './planes.js';
+import { createPlane } from './plane.js';
 
 const WATER_SURFACES = new Set([
   'sea',
@@ -77,13 +79,15 @@ describe('LEVELS (Campaña La Vuelta al Mundo en 20 niveles)', () => {
     }
   });
 
-  it('la velocidad final es mayor que la inicial y la dificultad crece entre niveles', () => {
+  it('la velocidad final es mayor que la inicial y la dificultad crece combinando hueco, separación y variación de altura', () => {
     for (const level of LEVELS) {
       expect(level.speedEnd).toBeGreaterThan(level.speedStart);
     }
     for (let i = 1; i < LEVELS.length; i++) {
       expect(LEVELS[i].speedStart).toBeGreaterThan(LEVELS[i - 1].speedStart);
       expect(LEVELS[i].gapSize).toBeLessThan(LEVELS[i - 1].gapSize);
+      expect(LEVELS[i].spawnIntervalDist).toBeLessThan(LEVELS[i - 1].spawnIntervalDist);
+      expect(LEVELS[i].maxGapStep).toBeGreaterThan(LEVELS[i - 1].maxGapStep);
     }
   });
 
@@ -165,13 +169,52 @@ describe('LEVELS (Campaña La Vuelta al Mundo en 20 niveles)', () => {
 });
 
 describe('getTimeOfDayPhase', () => {
-  it('reparte equitativamente día, atardecer y noche a lo largo del nivel', () => {
+  it('asigna más día (0-45%), más atardecer (45-82%) y menos noche (82-100%)', () => {
     expect(getTimeOfDayPhase(0)).toBe('day');
-    expect(getTimeOfDayPhase(0.2)).toBe('day');
-    expect(getTimeOfDayPhase(0.34)).toBe('sunset');
-    expect(getTimeOfDayPhase(0.5)).toBe('sunset');
-    expect(getTimeOfDayPhase(0.67)).toBe('night');
+    expect(getTimeOfDayPhase(0.4)).toBe('day');
+    expect(getTimeOfDayPhase(0.48)).toBe('sunset');
+    expect(getTimeOfDayPhase(0.75)).toBe('sunset');
+    expect(getTimeOfDayPhase(0.85)).toBe('night');
     expect(getTimeOfDayPhase(1)).toBe('night');
+  });
+});
+
+describe('PLANES (Catálogo de 9 aviones y mejoras)', () => {
+  it('define 9 aviones seleccionables con textos traducidos y modelos 3D', () => {
+    expect(PLANES).toHaveLength(9);
+    expect(PLANES[0].unlockCost).toBe(0);
+
+    const planeCtrl = createPlane();
+    for (const plane of PLANES) {
+      expect(STRINGS.en[plane.nameKey]).toBeTruthy();
+      expect(STRINGS.en[plane.descKey]).toBeTruthy();
+      planeCtrl.setModel(plane.id);
+      expect(planeCtrl.group.children.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('mejora los 5 atributos propios de cada avión del nivel 1 al 5', () => {
+    const base = getPlaneStats('atlas_cargo', {
+      magnet: 1,
+      multiplier: 1,
+      shield: 1,
+      size: 1,
+      weight: 1
+    });
+    const maxed = getPlaneStats('atlas_cargo', {
+      magnet: 5,
+      multiplier: 5,
+      shield: 5,
+      size: 5,
+      weight: 5
+    });
+
+    expect(maxed.hitRadius).toBeLessThan(base.hitRadius);
+    expect(maxed.weightMultiplier).toBeLessThan(base.weightMultiplier);
+    expect(Math.abs(maxed.gravity)).toBeLessThan(Math.abs(base.gravity));
+    expect(maxed.magnetRadius).toBeGreaterThan(base.magnetRadius);
+    expect(maxed.coinMultiplier).toBe(5);
+    expect(maxed.shieldChance).toBeGreaterThan(base.shieldChance);
   });
 });
 

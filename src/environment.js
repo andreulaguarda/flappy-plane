@@ -681,25 +681,25 @@ export function createEnvironment(scene) {
   function setTimeOfDay(progressRatio = 0, instant = false) {
     const p = Math.min(1, Math.max(0, Number.isFinite(progressRatio) ? progressRatio : 0));
 
-    // [0..1/3] Día (Sol brillante) -> [1/3..2/3] Atardecer (Sol naranja bajo) -> [2/3..1] Noche (Luna y estrellas)
-    if (p < 1 / 3) {
-      const sunsetBlend = THREE.MathUtils.smoothstep(p, 0.25, 0.36);
+    // [0..0.45] Día -> [0.45..0.82] Atardecer -> [0.82..1.00] Noche breve y clara
+    if (p < 0.45) {
+      const sunsetBlend = THREE.MathUtils.smoothstep(p, 0.36, 0.48);
       targetSunColor.setHex(0xfde047).lerp(new THREE.Color(0xf97316), sunsetBlend);
       targetCloudColor.setHex(0xffffff).lerp(new THREE.Color(0xfed7aa), sunsetBlend);
-      targetSunY = THREE.MathUtils.lerp(13.2, 7.6, sunsetBlend);
+      targetSunY = THREE.MathUtils.lerp(13.2, 8.0, sunsetBlend);
       targetStarOpacity = 0;
-    } else if (p < 2 / 3) {
-      const toNight = THREE.MathUtils.smoothstep(p, 0.58, 0.7);
-      targetSunColor.setHex(0xf97316).lerp(new THREE.Color(0xf1f5f9), toNight);
-      targetCloudColor.setHex(0xfed7aa).lerp(new THREE.Color(0x94a3b8), toNight);
-      targetSunY = THREE.MathUtils.lerp(7.6, 12.6, toNight);
-      targetStarOpacity = toNight * 0.92;
+    } else if (p < 0.82) {
+      const toNight = THREE.MathUtils.smoothstep(p, 0.74, 0.86);
+      targetSunColor.setHex(0xf97316).lerp(new THREE.Color(0xf8fafc), toNight);
+      targetCloudColor.setHex(0xfed7aa).lerp(new THREE.Color(0xcbd5e1), toNight);
+      targetSunY = THREE.MathUtils.lerp(8.0, 12.6, toNight);
+      targetStarOpacity = toNight * 0.78;
     } else {
-      const nightBlend = THREE.MathUtils.smoothstep(p, 0.58, 0.72);
-      targetSunColor.setHex(0xf97316).lerp(new THREE.Color(0xf1f5f9), nightBlend);
-      targetCloudColor.setHex(0xfed7aa).lerp(new THREE.Color(0x94a3b8), nightBlend);
-      targetSunY = THREE.MathUtils.lerp(7.6, 12.6, nightBlend);
-      targetStarOpacity = nightBlend * 0.92;
+      const nightBlend = THREE.MathUtils.smoothstep(p, 0.74, 0.88);
+      targetSunColor.setHex(0xf97316).lerp(new THREE.Color(0xf8fafc), nightBlend);
+      targetCloudColor.setHex(0xfed7aa).lerp(new THREE.Color(0xcbd5e1), nightBlend);
+      targetSunY = THREE.MathUtils.lerp(8.0, 12.6, nightBlend);
+      targetStarOpacity = nightBlend * 0.78;
     }
 
     if (instant) {

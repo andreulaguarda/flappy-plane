@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import { LEVELS } from './config.js';
 
-const SUNSET_SKY = new THREE.Color(0xea580c);
-const SUNSET_FOG = new THREE.Color(0xfdba74);
-const SUNSET_LIGHT = new THREE.Color(0xffb074);
+const SUNSET_SKY = new THREE.Color(0xf97316);
+const SUNSET_FOG = new THREE.Color(0xfed7aa);
+const SUNSET_LIGHT = new THREE.Color(0xffc085);
 
-const NIGHT_SKY = new THREE.Color(0x0b132b);
-const NIGHT_FOG = new THREE.Color(0x1e293b);
-const NIGHT_LIGHT = new THREE.Color(0x93c5fd);
+const NIGHT_SKY = new THREE.Color(0x1e3a8a);
+const NIGHT_FOG = new THREE.Color(0x334155);
+const NIGHT_LIGHT = new THREE.Color(0xdbeafe);
 
 export function createWorld(canvas) {
   const renderer = new THREE.WebGLRenderer({
@@ -106,40 +106,38 @@ export function createWorld(canvas) {
   function computeTimeOfDayTargets(p) {
     const clamped = Math.min(1, Math.max(0, Number.isFinite(p) ? p : 0));
 
-    // Reparto equitativo en 3 tercios:
-    // [0.00 - 0.33]: Día -> [0.33 - 0.66]: Atardecer -> [0.66 - 1.00]: Noche
-    if (clamped < 1 / 3) {
-      // Transición suave hacia el atardecer en el último tramo del día (0.25 -> 0.33)
-      const sunsetBlend = THREE.MathUtils.smoothstep(clamped, 0.25, 0.36);
-      targetSkyColor.copy(baseSkyColor).lerp(SUNSET_SKY, sunsetBlend * 0.85);
-      targetFogColor.copy(baseFogColor).lerp(SUNSET_FOG, sunsetBlend * 0.82);
+    // Más día (0.00 - 0.45), más atardecer (0.45 - 0.82) y menos noche (0.82 - 1.00), con noche mucho más luminosa
+    if (clamped < 0.45) {
+      const sunsetBlend = THREE.MathUtils.smoothstep(clamped, 0.36, 0.48);
+      targetSkyColor.copy(baseSkyColor).lerp(SUNSET_SKY, sunsetBlend * 0.82);
+      targetFogColor.copy(baseFogColor).lerp(SUNSET_FOG, sunsetBlend * 0.8);
       targetLightColor.copy(baseLightColor).lerp(SUNSET_LIGHT, sunsetBlend);
-      targetDirIntensity = THREE.MathUtils.lerp(1.7, 1.45, sunsetBlend);
-      targetHemiIntensity = THREE.MathUtils.lerp(1.15, 0.98, sunsetBlend);
-    } else if (clamped < 2 / 3) {
-      const toSunset = THREE.MathUtils.smoothstep(clamped, 0.25, 0.38);
-      const toNight = THREE.MathUtils.smoothstep(clamped, 0.58, 0.7);
+      targetDirIntensity = THREE.MathUtils.lerp(1.7, 1.55, sunsetBlend);
+      targetHemiIntensity = THREE.MathUtils.lerp(1.15, 1.05, sunsetBlend);
+    } else if (clamped < 0.82) {
+      const toSunset = THREE.MathUtils.smoothstep(clamped, 0.36, 0.5);
+      const toNight = THREE.MathUtils.smoothstep(clamped, 0.74, 0.86);
       targetSkyColor
         .copy(baseSkyColor)
-        .lerp(SUNSET_SKY, toSunset * 0.88)
-        .lerp(NIGHT_SKY, toNight);
+        .lerp(SUNSET_SKY, toSunset * 0.85)
+        .lerp(NIGHT_SKY, toNight * 0.88);
       targetFogColor
         .copy(baseFogColor)
-        .lerp(SUNSET_FOG, toSunset * 0.85)
-        .lerp(NIGHT_FOG, toNight);
+        .lerp(SUNSET_FOG, toSunset * 0.82)
+        .lerp(NIGHT_FOG, toNight * 0.85);
       targetLightColor
         .copy(baseLightColor)
         .lerp(SUNSET_LIGHT, toSunset)
         .lerp(NIGHT_LIGHT, toNight);
-      targetDirIntensity = THREE.MathUtils.lerp(1.45, 1.05, toNight);
-      targetHemiIntensity = THREE.MathUtils.lerp(0.98, 0.78, toNight);
+      targetDirIntensity = THREE.MathUtils.lerp(1.55, 1.36, toNight);
+      targetHemiIntensity = THREE.MathUtils.lerp(1.05, 0.98, toNight);
     } else {
-      const nightBlend = THREE.MathUtils.smoothstep(clamped, 0.58, 0.72);
-      targetSkyColor.copy(SUNSET_SKY).lerp(NIGHT_SKY, nightBlend);
-      targetFogColor.copy(SUNSET_FOG).lerp(NIGHT_FOG, nightBlend);
+      const nightBlend = THREE.MathUtils.smoothstep(clamped, 0.74, 0.88);
+      targetSkyColor.copy(SUNSET_SKY).lerp(NIGHT_SKY, nightBlend * 0.88);
+      targetFogColor.copy(SUNSET_FOG).lerp(NIGHT_FOG, nightBlend * 0.85);
       targetLightColor.copy(SUNSET_LIGHT).lerp(NIGHT_LIGHT, nightBlend);
-      targetDirIntensity = THREE.MathUtils.lerp(1.45, 1.05, nightBlend);
-      targetHemiIntensity = THREE.MathUtils.lerp(0.98, 0.78, nightBlend);
+      targetDirIntensity = THREE.MathUtils.lerp(1.55, 1.36, nightBlend);
+      targetHemiIntensity = THREE.MathUtils.lerp(1.05, 0.98, nightBlend);
     }
   }
 

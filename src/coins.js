@@ -75,12 +75,13 @@ export function createCoinSystem(scene) {
     emissive: 0xffa500,
     emissiveIntensity: 0.4
   });
+  // Estrella central en color naranja vibrante
   const starMat = new THREE.MeshStandardMaterial({
-    color: 0xfff7cc,
+    color: 0xf97316,
     metalness: 0.25,
-    roughness: 0.3,
-    emissive: 0xfff1a8,
-    emissiveIntensity: 0.6
+    roughness: 0.28,
+    emissive: 0xea580c,
+    emissiveIntensity: 0.55
   });
   const glowMat = new THREE.SpriteMaterial({
     map: createGlowTexture(),
@@ -111,26 +112,49 @@ export function createCoinSystem(scene) {
 
     mesh.add(body, rim, face, starFront, starBack, glow);
     mesh.rotation.y = Math.random() * Math.PI * 2;
+    if (obstacle?.mesh) {
+      mesh.position.set(obstacle.mesh.position.x, obstacle.gapY, 0);
+    }
     group.add(mesh);
 
     const coin = {
       mesh,
       obstacle,
+      attracted: false,
       phase: Math.random() * Math.PI * 2
     };
     coins.push(coin);
     return coin;
   }
 
-  function move(dt, elapsedTime) {
+  function move(dt, elapsedTime, planeX = null, planeY = null, magnetRadius = 0) {
+    const hasMagnet =
+      magnetRadius > 0 && Number.isFinite(planeX) && Number.isFinite(planeY);
+
     for (const coin of coins) {
       const obstacle = coin.obstacle;
       if (!obstacle) continue;
 
-      // La moneda vive en el centro del hueco: sigue al obstáculo tanto en
-      // horizontal como en su oscilación vertical.
-      coin.mesh.position.x = obstacle.mesh.position.x;
-      coin.mesh.position.y = obstacle.gapY + Math.sin(elapsedTime * 2.4 + coin.phase) * 0.08;
+      if (!coin.attracted) {
+        coin.mesh.position.x = obstacle.mesh.position.x;
+        coin.mesh.position.y =
+          obstacle.gapY + Math.sin(elapsedTime * 2.4 + coin.phase) * 0.08;
+
+        if (hasMagnet) {
+          const dx = planeX - coin.mesh.position.x;
+          const dy = planeY - coin.mesh.position.y;
+          if (dx * dx + dy * dy <= magnetRadius * magnetRadius) {
+            coin.attracted = true;
+          }
+        }
+      }
+
+      if (coin.attracted && Number.isFinite(planeX) && Number.isFinite(planeY)) {
+        const pull = Math.min(1, dt * 14);
+        coin.mesh.position.x += (planeX - coin.mesh.position.x) * pull;
+        coin.mesh.position.y += (planeY - coin.mesh.position.y) * pull;
+      }
+
       coin.mesh.rotation.y += 4.4 * dt;
     }
   }

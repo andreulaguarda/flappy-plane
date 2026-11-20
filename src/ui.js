@@ -1,6 +1,13 @@
 import { t } from './strings.js';
 import { formatDistance, levelDistanceKm } from './distance.js';
 import { UNLOCK_ALL_LEVELS } from './config.js';
+import {
+  PLANES,
+  MAX_UPGRADE_LEVEL,
+  getPlaneConfig,
+  getPlaneStats,
+  getUpgradeCost
+} from './planes.js';
 
 export function getMedalInfo(points, total) {
   const ratio = total > 0 ? points / total : 0;
@@ -24,6 +31,10 @@ export class UI {
 
     this.menuScreen = document.getElementById('menu-screen');
     this.levelList = document.getElementById('level-list');
+    this.hangarPanel = document.getElementById('hangar-panel');
+    this.tabStages = document.getElementById('tab-stages');
+    this.tabHangar = document.getElementById('tab-hangar');
+
     this.pauseScreen = document.getElementById('pause-screen');
     this.gameoverScreen = document.getElementById('gameover-screen');
     this.completeScreen = document.getElementById('complete-screen');
@@ -67,15 +78,21 @@ export class UI {
     this.completeMedalIconEl = document.getElementById('complete-medal-icon');
     this.completeMedalTextEl = document.getElementById('complete-medal-text');
 
+    this.activeTab = 'stages';
+    this.previewPlaneId = PLANES[0].id;
+    this.lastMenuData = null;
+    this.handlers = null;
+
     this.bannerTimeout = null;
     this.gameOverTimeout = null;
     this.completeTimeout = null;
   }
 
   bind(handlers) {
+    this.handlers = handlers;
     const wrap = (fn) => (event) => {
       event.stopPropagation();
-      fn();
+      fn?.();
     };
 
     this.btnResume.addEventListener('click', wrap(handlers.onResume));
@@ -90,11 +107,64 @@ export class UI {
     this.btnSound.addEventListener('click', wrap(handlers.onSoundToggle));
     this.btnSoundMenu.addEventListener('click', wrap(handlers.onSoundToggle));
 
+    this.tabStages?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.setTab('stages');
+    });
+
+    this.tabHangar?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.setTab('hangar');
+    });
+
     this.levelList.addEventListener('click', (event) => {
       const card = event.target.closest('[data-level]');
       if (!card || card.disabled) return;
-      handlers.onSelectLevel(Number(card.dataset.level));
+      handlers.onSelectLevel?.(Number(card.dataset.level));
     });
+
+    this.hangarPanel?.addEventListener('click', (event) => {
+      const chip = event.target.closest('[data-plane-id]');
+      if (chip) {
+        const planeId = chip.dataset.planeId;
+        this.previewPlaneId = planeId;
+        handlers.onPreviewPlane?.(planeId);
+        if (this.lastMenuData) {
+          this.renderHangar(this.lastMenuData);
+        }
+        return;
+      }
+
+      const actionBtn = event.target.closest('[data-plane-action]');
+      if (actionBtn && !actionBtn.disabled) {
+        handlers.onEquipOrBuyPlane?.(actionBtn.dataset.planeAction);
+        return;
+      }
+
+      const upgBtn = event.target.closest('[data-upgrade-stat]');
+      if (upgBtn && !upgBtn.disabled) {
+        handlers.onUpgradePlane?.(
+          upgBtn.dataset.upgradePlane,
+          upgBtn.dataset.upgradeStat
+        );
+      }
+    });
+  }
+
+  setTab(tab) {
+    this.activeTab = tab === 'hangar' ? 'hangar' : 'stages';
+    const isHangar = this.activeTab === 'hangar';
+    this.tabStages?.classList.toggle('active', !isHangar);
+    this.tabHangar?.classList.toggle('active', isHangar);
+    this.levelList?.classList.toggle('hidden-panel', isHangar);
+    this.hangarPanel?.classList.toggle('hidden-panel', !isHangar);
+
+    if (!isHangar && this.lastMenuData?.hangar) {
+      this.previewPlaneId = this.lastMenuData.hangar.selectedPlane;
+      this.handlers?.onPreviewPlane?.(this.previewPlaneId);
+    } else if (isHangar) {
+      this.handlers?.onPreviewPlane?.(this.previewPlaneId);
+    }
   }
 
   setBest(km) {
@@ -136,9 +206,123 @@ export class UI {
     this.uiLayer.classList.add('ui-hidden');
   }
 
-  showMenu({ levels, progress, bests, coins }) {
+  renderHangar({ hangar, coins }) {
+    if (!this.hangarPanel || !hangar) return;
+    if (!this.previewPlaneId) {
+      this.previewPlaneId = hangar.selectedPlane;
+    }
+
+    const plane = getPlaneConfig(this.previewPlaneId);
+    const isUnlocked = hangar.unlockedPlanes.includes(plane.id);
+    const isEquipped = hangar.selectedPlane === plane.id;
+    const planeUpgrades = hangar.upgrades[plane.id];
+    const stats = getPlaneStats(plane.id, planeUpgrades);
+
+    const rosterHtml = PLANES.map((p, idx) => {
+      const unlocked = hangar.unlockedPlanes.includes(p.id);
+      const equipped = hangar.selectedPlane === p.id;
+      const active = plane.id === p.id;
+      const statusIcon = equipped ? '✓' : unlocked ? '✈' : `🔒${p.unlockCost}`;
+      return `
+        <button type="button" class="plane-chip${active ? ' active' : ''}${equipped ? ' equipped' : ''}" data-plane-id="${p.id}">
+          <span class="plane-chip-top">
+            <span>#${String(idx + 1).padStart(2, '0')}</span>
+            <span>${statusIcon}</span>
+          </span>
+          <span class="plane-chip-name">${t(p.nameKey)}</span>
+        </button>
+      `;
+    }).join('');
+
+    let actionBtnHtml = '';
+    if (isEquipped) {
+      actionBtnHtml = `<button type="button" class="plane-action-btn equipped" disabled>${t('selectedPlaneBtn')}</button>`;
+    } else if (isUnlocked) {
+      actionBtnHtml = `<button type="button" class="plane-action-btn" data-plane-action="${plane.id}">${t('selectPlaneBtn')}</button>`;
+    } else {
+      const canAffordPlane = coins >= plane.unlockCost;
+      actionBtnHtml = `<button type="button" class="plane-action-btn" data-plane-action="${plane.id}" ${canAffordPlane ? '' : 'disabled'}>${t('buyPlaneBtn', { cost: plane.unlockCost })}</button>`;
+    }
+
+    const upgradeSpecs = [
+      {
+        key: 'size',
+        label: t('statSize'),
+        valueText: `${Math.round(stats.sizeMultiplier * 100)}%`
+      },
+      {
+        key: 'weight',
+        label: t('statWeight'),
+        valueText: `${Math.round(stats.weightMultiplier * 100)}%`
+      },
+      {
+        key: 'magnet',
+        label: t('statMagnet'),
+        valueText: `${stats.magnetRadius.toFixed(1)}m`
+      },
+      {
+        key: 'multiplier',
+        label: t('statMultiplier'),
+        valueText: `x${stats.coinMultiplier}`
+      },
+      {
+        key: 'shield',
+        label: t('statShield'),
+        valueText: `${Math.round(stats.shieldChance * 100)}%`
+      }
+    ];
+
+    const upgradesHtml = upgradeSpecs
+      .map((u) => {
+        const lvl = stats.upgrades[u.key] || 1;
+        const cost = getUpgradeCost(lvl);
+        const isMax = lvl >= MAX_UPGRADE_LEVEL || cost === null;
+        const canUpgrade = isUnlocked && !isMax && coins >= cost;
+        const pips = Array.from({ length: MAX_UPGRADE_LEVEL }, (_, i) => {
+          return `<span class="upgrade-pip${i < lvl ? ' filled' : ''}"></span>`;
+        }).join('');
+        const btnLabel = isMax ? t('maxLevelBtn') : t('upgradeBtn', { cost });
+
+        return `
+          <div class="upgrade-row">
+            <div class="upgrade-info">
+              <div class="upgrade-label-row">
+                <span>${u.label}</span>
+                <span class="upgrade-value">${u.valueText}</span>
+              </div>
+              <div class="upgrade-pips">${pips}</div>
+            </div>
+            <button type="button" class="upgrade-btn" data-upgrade-plane="${plane.id}" data-upgrade-stat="${u.key}" ${canUpgrade ? '' : 'disabled'}>
+              ${btnLabel}
+            </button>
+          </div>
+        `;
+      })
+      .join('');
+
+    this.hangarPanel.innerHTML = `
+      <div class="plane-roster">${rosterHtml}</div>
+      <div class="plane-detail-card">
+        <div class="plane-detail-header">
+          <div>
+            <div class="plane-detail-title">${t(plane.nameKey)}</div>
+            <div class="plane-detail-desc">${t(plane.descKey)}</div>
+          </div>
+        </div>
+        ${actionBtnHtml}
+        <div class="upgrade-list">${upgradesHtml}</div>
+      </div>
+    `;
+  }
+
+  showMenu({ levels, progress, bests, coins, hangar }) {
+    this.lastMenuData = { levels, progress, bests, coins, hangar };
     this.levelList.innerHTML = '';
     this.menuCoins.textContent = coins;
+
+    if (hangar && (!this.previewPlaneId || !getPlaneConfig(this.previewPlaneId))) {
+      this.previewPlaneId = hangar.selectedPlane;
+    }
 
     for (const level of levels) {
       const unlocked = UNLOCK_ALL_LEVELS || level.id <= progress.unlocked;
@@ -170,6 +354,10 @@ export class UI {
       `;
 
       this.levelList.appendChild(card);
+    }
+
+    if (hangar) {
+      this.renderHangar({ hangar, coins });
     }
 
     this.menuScreen.classList.remove('hidden');

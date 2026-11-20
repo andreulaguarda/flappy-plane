@@ -523,4 +523,243 @@ html, body {
   margin: 10px auto 0;
 }
 
+.menu-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 10px 0 6px;
+}
+
+.menu-tab {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 10px 10px;
+  border-radius: 13px;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.menu-tab.active {
+  background: rgba(250, 204, 21, 0.18);
+  border-color: rgba(250, 204, 21, 0.65);
+  color: #fef08a;
+}
+
+.hidden-panel {
+  display: none !important;
+}
+
+.hangar-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 12px 0 6px;
+  text-align: left;
+}
+
+.plane-roster {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.plane-chip {
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 9px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.plane-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.plane-chip.active {
+  border-color: var(--accent);
+  background: rgba(250, 204, 21, 0.15);
+}
+
+.plane-chip.equipped {
+  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.6);
+}
+
+.plane-chip-top {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.plane-chip-name {
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1.15;
+  color: #ffffff;
+}
+
+.plane-detail-card {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plane-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.plane-detail-title {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #fef08a;
+}
+
+.plane-detail-desc {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.plane-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.plane-stat-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #e2e8f0;
+}
+
+.plane-action-btn {
+  width: 100%;
+  font-family: inherit;
+  border: none;
+  border-radius: 13px;
+  padding: 11px 14px;
+  font-size: 0.86rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: #0f172a;
+  background: linear-gradient(180deg, #fde047 0%, #facc15 100%);
+  box-shadow: 0 4px 0 #b45309;
+}
+
+.plane-action-btn.equipped {
+  background: rgba(16, 185, 129, 0.22);
+  color: #6ee7b7;
+  border: 1.5px solid rgba(16, 185, 129, 0.55);
+  box-shadow: none;
+  cursor: default;
+}
+
+.plane-action-btn:disabled:not(.equipped) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.upgrade-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 2px;
+}
+
+.upgrade-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.upgrade-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.upgrade-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+
+.upgrade-value {
+  color: var(--accent);
+}
+
+.upgrade-pips {
+  display: flex;
+  gap: 4px;
+}
+
+.upgrade-pip {
+  height: 5px;
+  flex: 1;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.upgrade-pip.filled {
+  background: var(--accent);
+}
+
+.upgrade-btn {
+  font-family: inherit;
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(250, 204, 21, 0.45);
+  background: rgba(250, 204, 21, 0.16);
+  color: #fef08a;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.upgrade-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+
 

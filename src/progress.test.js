@@ -10,7 +10,13 @@ import {
   saveBests,
   normalizeCoins,
   loadCoins,
-  saveCoins
+  saveCoins,
+  normalizeHangar,
+  loadHangar,
+  saveHangar,
+  selectPlane,
+  unlockPlane,
+  upgradePlaneStat
 } from './progress.js';
 
 function createStorage(entries = {}) {
@@ -106,5 +112,50 @@ describe('monedas', () => {
 
   it('empieza sin monedas si no hay datos', () => {
     expect(loadCoins(createStorage())).toBe(0);
+  });
+});
+
+describe('hangar y mejoras de aviones', () => {
+  it('desbloquea por defecto el avión inicial atlas_cargo con mejoras en nivel 1', () => {
+    const hangar = normalizeHangar(null);
+    expect(hangar.selectedPlane).toBe('atlas_cargo');
+    expect(hangar.unlockedPlanes).toContain('atlas_cargo');
+    expect(hangar.upgrades.atlas_cargo).toEqual({
+      magnet: 1,
+      multiplier: 1,
+      shield: 1,
+      size: 1,
+      weight: 1
+    });
+  });
+
+  it('permite comprar y seleccionar un avión nuevo con monedas suficientes', () => {
+    const initial = normalizeHangar(null);
+    const failRes = unlockPlane(initial, 10, 'aero_classic');
+    expect(failRes.success).toBe(false);
+
+    const okRes = unlockPlane(initial, 50, 'aero_classic');
+    expect(okRes.success).toBe(true);
+    expect(okRes.wallet).toBe(25);
+    expect(okRes.hangar.selectedPlane).toBe('aero_classic');
+    expect(okRes.hangar.unlockedPlanes).toContain('aero_classic');
+
+    const switched = selectPlane(okRes.hangar, 'atlas_cargo');
+    expect(switched.selectedPlane).toBe('atlas_cargo');
+  });
+
+  it('mejora atributos individuales por avión descontando monedas y guarda en storage', () => {
+    const storage = createStorage();
+    let hangar = loadHangar(storage);
+    let wallet = 100;
+
+    const up1 = upgradePlaneStat(hangar, wallet, 'atlas_cargo', 'magnet');
+    expect(up1.success).toBe(true);
+    expect(up1.hangar.upgrades.atlas_cargo.magnet).toBe(2);
+    expect(up1.hangar.upgrades.aero_classic.magnet).toBe(1);
+
+    saveHangar(up1.hangar, storage);
+    const loaded = loadHangar(storage);
+    expect(loaded.upgrades.atlas_cargo.magnet).toBe(2);
   });
 });

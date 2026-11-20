@@ -14,6 +14,7 @@ import { hitsGap, hitsFloor, hitsCeiling, passedObstacle } from './collision.js'
 import { bindInput } from './input.js';
 import { getMedalInfo } from './ui.js';
 import { formatDistance, levelDistanceKm } from './distance.js';
+import { getPlaneStats } from './planes.js';
 import {
   loadProgress,
   saveProgress,
@@ -21,6 +22,11 @@ import {
   saveBests,
   loadCoins,
   saveCoins,
+  loadHangar,
+  saveHangar,
+  selectPlane,
+  unlockPlane,
+  upgradePlaneStat,
   unlockNextLevel,
   updateBests
 } from './progress.js';
@@ -58,6 +64,8 @@ export class Game {
     this.bests = loadBests();
     this.bestScore = this.bests[this.level.id] || 0;
     this.wallet = loadCoins();
+    this.hangar = loadHangar();
+    this.planeStats = this.computeActivePlaneStats(this.hangar.selectedPlane);
     this.runCoins = 0;
 
     this.runwayPlaneY = CONFIG.floorY + 0.88;
@@ -68,6 +76,8 @@ export class Game {
     this.obstaclesSpawned = 0;
     this.smokeTimer = 0;
     this.takeoffTimer = 0;
+    this.shieldTimer = 0;
+    this.shieldUsedInRun = false;
     this.crashStopDuration = 0.7;
     this.crashStartSpeed = 0;
     this.crashScrollSpeed = 0;
@@ -104,6 +114,15 @@ export class Game {
       onMenu: () => {
         this.sound.playClick();
         this.showMenu();
+      },
+      onPreviewPlane: (planeId) => {
+        this.applyPlaneVisuals(planeId);
+      },
+      onEquipOrBuyPlane: (planeId) => {
+        this.handleEquipOrBuyPlane(planeId);
+      },
+      onUpgradePlane: (planeId, statKey) => {
+        this.handleUpgradePlane(planeId, statKey);
       }
     });
 
@@ -111,6 +130,67 @@ export class Game {
 
     this.ui.setSoundMuted(this.sound.muted);
     this.showMenu();
+  }
+
+  computeActivePlaneStats(planeId = this.hangar.selectedPlane) {
+    const upgrades = this.hangar.upgrades?.[planeId];
+    return getPlaneStats(planeId, upgrades);
+  }
+
+  applyPlaneVisuals(planeId = this.hangar.selectedPlane) {
+    const stats = this.computeActivePlaneStats(planeId);
+    this.plane.userData.setModel?.(planeId);
+    this.plane.scale.setScalar(stats.sizeMultiplier);
+    this.plane.userData.setShieldActive?.(false, this.elapsedTime);
+    return stats;
+  }
+
+  handleEquipOrBuyPlane(planeId) {
+    if (this.hangar.unlockedPlanes.includes(planeId)) {
+      this.hangar = selectPlane(this.hangar, planeId);
+      this.sound.playClick();
+    } else {
+      const res = unlockPlane(this.hangar, this.wallet, planeId);
+      if (!res.success) return;
+      this.hangar = res.hangar;
+      this.wallet = res.wallet;
+      this.sound.playCoin();
+    }
+
+    this.planeStats = this.applyPlaneVisuals(this.hangar.selectedPlane);
+    saveHangar(this.hangar);
+    saveCoins(this.wallet);
+    this.ui.setCoins(this.wallet);
+    this.ui.showMenu({
+      levels: LEVELS,
+      progress: this.progress,
+      bests: this.bests,
+      coins: this.wallet,
+      hangar: this.hangar
+    });
+  }
+
+  handleUpgradePlane(planeId, statKey) {
+    const res = upgradePlaneStat(this.hangar, this.wallet, planeId, statKey);
+    if (!res.success) return;
+
+    this.hangar = res.hangar;
+    this.wallet = res.wallet;
+    this.sound.playCoin();
+
+    this.applyPlaneVisuals(planeId);
+    this.planeStats = this.computeActivePlaneStats(this.hangar.selectedPlane);
+
+    saveHangar(this.hangar);
+    saveCoins(this.wallet);
+    this.ui.setCoins(this.wallet);
+    this.ui.showMenu({
+      levels: LEVELS,
+      progress: this.progress,
+      bests: this.bests,
+      coins: this.wallet,
+      hangar: this.hangar
+    });
   }
 
   start() {
@@ -126,6 +206,8 @@ export class Game {
     this.coins.clear();
     this.particles.clear();
 
+    this.planeStats = this.applyPlaneVisuals(this.hangar.selectedPlane);
+
     this.distanceKm = 0;
     this.obstaclesPassed = 0;
     this.lastDisplayedKm = -1;
@@ -138,6 +220,8 @@ export class Game {
     this.obstaclesSpawned = 0;
     this.smokeTimer = 0;
     this.takeoffTimer = 0;
+    this.shieldTimer = 0;
+    this.shieldUsedInRun = false;
     this.crashStartSpeed = 0;
     this.crashScrollSpeed = 0;
     this.crashStopTimer = 0;
@@ -174,11 +258,13 @@ export class Game {
     this.ui.hideHud();
     saveBests(this.bests);
     saveCoins(this.wallet);
+    saveHangar(this.hangar);
     this.ui.showMenu({
       levels: LEVELS,
       progress: this.progress,
       bests: this.bests,
-      coins: this.wallet
+      coins: this.wallet,
+      hangar: this.hangar
     });
   }
 
@@ -242,9 +328,40 @@ export class Game {
     this.ui.setSoundMuted(muted);
   }
 
+  tryActivateEmergencyShield(targetSafeY, safeVelY = 4.5) {
+    if (this.shieldTimer > 0) return true;
+    if (this.shieldUsedInRun) return false;
+
+    const chance = this.planeStats?.shieldChance || 0;
+    if (chance <= 0 || Math.random() >= chance) return false;
+
+    this.shieldUsedInRun = true;
+    this.shieldTimer = 1.35;
+    this.planeY = targetSafeY;
+    this.planeVelY = safeVelY;
+    this.plane.position.y = this.planeY;
+    this.plane.userData.setShieldActive?.(true, this.elapsedTime);
+
+    this.sound.playPhaseUp();
+    this.world.shake(0.18);
+    this.particles.spawnBurst(
+      this.plane.position.x,
+      this.plane.position.y,
+      0,
+      [0x38bdf8, 0x22d3ee, 0xfef08a, 0xffffff],
+      22
+    );
+    this.ui.showBanner({
+      sub: t('shieldSubBanner'),
+      title: t('shieldActivatedBanner')
+    });
+    return true;
+  }
+
   triggerGameOver() {
     if (this.state === STATE.GAMEOVER) return;
     this.state = STATE.GAMEOVER;
+    this.plane.userData.setShieldActive?.(false, this.elapsedTime);
 
     this.crashStartSpeed = this.scrollSpeed;
     this.crashScrollSpeed = this.scrollSpeed;
@@ -277,6 +394,7 @@ export class Game {
 
   completeLevel() {
     this.state = STATE.LEVEL_COMPLETE;
+    this.plane.userData.setShieldActive?.(false, this.elapsedTime);
     this.distanceKm = levelDistanceKm(this.level);
     this.ui.setDistance(this.distanceKm);
 
@@ -342,7 +460,13 @@ export class Game {
     }
 
     if (this.state === STATE.PLAYING || this.state === STATE.GAMEOVER) {
-      this.coins.move(dt, this.elapsedTime);
+      this.coins.move(
+        dt,
+        this.elapsedTime,
+        this.plane.position.x,
+        this.planeY,
+        this.state === STATE.PLAYING ? this.planeStats.magnetRadius : 0
+      );
       this.coins.cleanup();
       if (this.state === STATE.PLAYING) {
         this.collectCoins();
@@ -435,12 +559,13 @@ export class Game {
     }
 
     if (t >= 1) {
+      const intervalDist = this.level.spawnIntervalDist || CONFIG.spawnIntervalDist;
       this.scrollSpeed = this.level.speedStart;
       this.planeVelY = CONFIG.takeoffExitVelY;
       this.distSinceLastSpawn = 0;
       const firstObstacle = this.obstacles.spawn(16, this.level, 0);
       const secondObstacle = this.obstacles.spawn(
-        16 + CONFIG.spawnIntervalDist,
+        16 + intervalDist,
         this.level,
         1
       );
@@ -452,16 +577,25 @@ export class Game {
   }
 
   updatePlaying(dt) {
-    this.planeVelY += CONFIG.gravity * dt;
+    const planeRadius = this.planeStats.hitRadius;
+    const planeGravity = this.planeStats.gravity;
+    const planeMaxFall = this.planeStats.maxFallSpeed;
+
+    if (this.shieldTimer > 0) {
+      this.shieldTimer = Math.max(0, this.shieldTimer - dt);
+      this.plane.userData.setShieldActive?.(this.shieldTimer > 0, this.elapsedTime);
+    }
+
+    this.planeVelY += planeGravity * dt;
     this.planeVelY = THREE.MathUtils.clamp(
       this.planeVelY,
-      CONFIG.maxFallSpeed,
+      planeMaxFall,
       CONFIG.maxRiseSpeed
     );
     this.planeY += this.planeVelY * dt;
 
-    if (hitsCeiling(this.planeY, CONFIG.planeRadius, CONFIG.ceilingY)) {
-      this.planeY = CONFIG.ceilingY - CONFIG.planeRadius;
+    if (hitsCeiling(this.planeY, planeRadius, CONFIG.ceilingY)) {
+      this.planeY = CONFIG.ceilingY - planeRadius;
       this.planeVelY = Math.min(0, this.planeVelY);
     }
 
@@ -479,21 +613,25 @@ export class Game {
 
     const targetKm = levelDistanceKm(this.level);
 
-    if (hitsFloor(this.planeY, CONFIG.planeRadius, CONFIG.floorY)) {
-      this.planeY = CONFIG.floorY + CONFIG.planeRadius;
+    if (hitsFloor(this.planeY, planeRadius, CONFIG.floorY)) {
+      this.planeY = CONFIG.floorY + planeRadius;
       this.plane.position.y = this.planeY;
 
       if (this.obstaclesPassed < this.level.obstacleCount) {
-        this.triggerGameOver();
-        return;
+        if (!this.tryActivateEmergencyShield(CONFIG.floorY + planeRadius + 1.8, 7.5)) {
+          this.triggerGameOver();
+          return;
+        }
+      } else {
+        this.planeVelY = Math.max(0, this.planeVelY);
       }
-      this.planeVelY = Math.max(0, this.planeVelY);
     }
 
+    const intervalDist = this.level.spawnIntervalDist || CONFIG.spawnIntervalDist;
     this.distSinceLastSpawn += this.scrollSpeed * dt;
     if (
       this.obstaclesSpawned < this.level.obstacleCount &&
-      this.distSinceLastSpawn >= CONFIG.spawnIntervalDist
+      this.distSinceLastSpawn >= intervalDist
     ) {
       this.distSinceLastSpawn = 0;
       const newObstacle = this.obstacles.spawn(
@@ -515,15 +653,17 @@ export class Game {
         hitsGap(
           planeX,
           this.planeY,
-          CONFIG.planeRadius,
+          planeRadius,
           obs.mesh.position.x,
           obs.halfWidth,
           obs.gapY,
           obs.gapHeight
         )
       ) {
-        this.triggerGameOver();
-        break;
+        if (!this.tryActivateEmergencyShield(obs.gapY, 3.8)) {
+          this.triggerGameOver();
+          break;
+        }
       }
 
       if (!obs.passed && passedObstacle(planeX, obs.mesh.position.x, obs.halfWidth)) {
@@ -548,18 +688,19 @@ export class Game {
     const picked = this.coins.collect(
       this.plane.position.x,
       this.planeY,
-      CONFIG.planeRadius
+      this.planeStats.hitRadius
     );
     if (picked.length === 0) return;
 
-    this.wallet += picked.length;
-    this.runCoins += picked.length;
+    const gained = picked.length * (this.planeStats.coinMultiplier || 1);
+    this.wallet += gained;
+    this.runCoins += gained;
     saveCoins(this.wallet);
     this.ui.setCoins(this.wallet, true);
     this.sound.playCoin();
 
     for (const coin of picked) {
-      this.particles.spawnBurst(coin.x, coin.y, 0, [0xfde047, 0xfbbf24, 0xffffff], 10);
+      this.particles.spawnBurst(coin.x, coin.y, 0, [0xf97316, 0xfde047, 0xffffff], 10);
     }
   }
 
@@ -567,8 +708,6 @@ export class Game {
     if (this.state !== STATE.PLAYING) return;
     const planeX = this.plane.position.x;
 
-    // Al completar los kilómetros reales del tramo y dejar atrás el último obstáculo,
-    // aparece la pista de aterrizaje junto al monumento icónico de la ciudad de destino.
     if (
       !this.runwaySpawned &&
       this.obstaclesPassed >= this.level.obstacleCount
@@ -602,6 +741,7 @@ export class Game {
 
   beginLanding() {
     this.state = STATE.LANDING;
+    this.plane.userData.setShieldActive?.(false, this.elapsedTime);
     this.landingTimer = 0;
     this.landingStartY = this.planeY;
     this.landingStartSpeed = this.scrollSpeed;
@@ -640,7 +780,7 @@ export class Game {
         this.landingStartSpeed * CONFIG.landingSpeedAtTouchdown * (1 - groundBlend);
     }
 
-    const rumble = Math.sin(this.elapsedTime * 47) * 0.022 * groundBlend;
+    const rumble = Math.sin(this.elapsedTime * 47) * 0.022 * groundRumbleSafe(groundBlend);
     this.plane.position.set(this.world.planeAnchorX, this.planeY + rumble, 0);
 
     const velY = (this.planeY - previousY) / Math.max(dt, 1 / 240);
@@ -676,12 +816,17 @@ export class Game {
       this.obstacles.move(dt, this.crashScrollSpeed, this.elapsedTime);
     }
 
-    if (this.planeY - CONFIG.planeRadius > CONFIG.floorY) {
-      this.planeVelY += CONFIG.gravity * dt;
+    const r = this.planeStats.hitRadius;
+    if (this.planeY - r > CONFIG.floorY) {
+      this.planeVelY += this.planeStats.gravity * dt;
       this.planeY += this.planeVelY * dt;
-      this.plane.position.y = Math.max(CONFIG.floorY + CONFIG.planeRadius, this.planeY);
+      this.plane.position.y = Math.max(CONFIG.floorY + r, this.planeY);
       this.plane.rotation.z -= 5.5 * dt;
       this.plane.rotation.x += 7.0 * dt;
     }
   }
+}
+
+function groundRumbleSafe(val) {
+  return Number.isFinite(val) ? val : 0;
 }

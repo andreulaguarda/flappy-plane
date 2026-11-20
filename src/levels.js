@@ -1458,13 +1458,15 @@ const RAW_LEVELS = [
 export const LEVELS = RAW_LEVELS.map((raw, index) => {
   const speedStart = Number((8.4 + index * 0.14).toFixed(2));
   const speedEnd = Number((speedStart + 0.75 + index * 0.02).toFixed(2));
-  const gapSize = Number((4.95 - index * 0.042).toFixed(3));
+  const gapSize = Number((5.25 - index * 0.07).toFixed(3));
+  const spawnIntervalDist = Number((13.1 - index * 0.19).toFixed(2));
+  const maxGapStep = Number((2.1 + index * 0.22).toFixed(2));
   const durationSec = (raw.distanceKm / MAX_LEVEL_KM) * MAX_LEVEL_DURATION_SEC;
   const avgSpeed = (speedStart + speedEnd) * 0.5;
   const totalWorldUnits = durationSec * avgSpeed;
   const obstacleCount = Math.max(
     6,
-    2 + Math.max(2, Math.round((totalWorldUnits - 32.5) / SPAWN_INTERVAL_DIST))
+    2 + Math.max(2, Math.round((totalWorldUnits - 32.5) / spawnIntervalDist))
   );
   const firstStage = raw.stages[0];
 
@@ -1474,6 +1476,8 @@ export const LEVELS = RAW_LEVELS.map((raw, index) => {
     fogHex: firstStage.fogHex,
     lightColor: firstStage.lightColor,
     gapSize,
+    spawnIntervalDist,
+    maxGapStep,
     speedStart,
     speedEnd,
     durationSec,
@@ -1498,10 +1502,10 @@ export function getStageForProgress(level, progressRatio = 0) {
   return chosen;
 }
 
-// Ciclo Día / Atardecer / Noche repartido equitativamente en cada nivel (1/3 cada fase)
+// Ciclo Día (0% - 45%) / Atardecer (45% - 82%) / Noche clara y breve (82% - 100%)
 export function getTimeOfDayPhase(progressRatio = 0) {
   const p = Math.min(1, Math.max(0, Number.isFinite(progressRatio) ? progressRatio : 0));
-  if (p < 1 / 3) return 'day';
-  if (p < 2 / 3) return 'sunset';
+  if (p < 0.45) return 'day';
+  if (p < 0.82) return 'sunset';
   return 'night';
 }
